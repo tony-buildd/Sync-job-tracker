@@ -1,105 +1,96 @@
 # Sync Job Tracker
 
-Shared job application tracking for households or small teams that want to avoid duplicate applications across different job sources.
+Shared duplicate prevention for household job applications.
 
-## Problem
+## What it does
 
-Spreadsheet-based tracking is slow and easy to get wrong when more than one person is applying with the same resume set, profile, or platform accounts.
+- Sign in with Google through Clerk
+- Paste a job URL from any source
+- Parse the posting into a canonical identity
+- Show whether the job is:
+  - `new`
+  - `already applied`
+  - `possible duplicate`
+- Save only applied jobs to the shared workspace
 
-The main failure case is duplicate applications:
-- the same job appears under different URLs
-- the same posting is found from different sources
-- one person applies without the other realizing it
+Unchecked jobs are not stored.
 
-## Product Goal
+## Matching model
 
-Paste a job URL and immediately answer:
-- Is this job new?
-- Has it already been applied to?
-- Who applied to it?
+Primary identity:
+- normalized `company + external_job_id`
 
-The app should treat equivalent job links as the same posting even when the raw URLs differ.
+Fallback identity:
+- normalized `company + title + location`
 
-## MVP
+Rules:
+- the raw URL is never the canonical identity
+- tracking parameters are ignored
+- fallback matches stay conservative and surface as `possible duplicate`
 
-### Core flow
+Examples covered by tests:
+- Nutrien `30186-en_US`
+- Amgen `93284715648`
 
-1. Sign in with Google
-2. Paste a job URL
-3. Parse the posting into a canonical job identity
-4. Check for existing matches
-5. Show one of:
-   - `new`
-   - `already applied`
-   - `possible duplicate`
+## Stack
 
-### Primary use case
-
-Two people, such as a couple, share the same job-tracking workspace so they do not accidentally apply to the same role twice.
-
-## Matching Model
-
-The app should not use the full raw URL as the unique identity.
-
-Recommended layered matching:
-
-1. Primary match: normalized `company + external_job_id`
-2. Fallback match: normalized `company + title + location`
-3. Ambiguous fallback results should return `possible duplicate`
-
-This handles cases like:
-- tracking parameters changing
-- source-specific path differences
-- one posting appearing from multiple job boards or referrals
-
-## Example
-
-These links should resolve to the same job:
-
-- `https://jobs.nutrien.com/North-America/job/Augusta-Process-Engineer-GA-30903/30186-en_US/?feedId=349960&utm_source=LinkedInJobPostings&jr_id=69c8912ab773006330b7fb8d`
-- `https://jobs.nutrien.com/North-America/job/Process-Engineer/30186-en_US/`
-
-Because the stable job identifier is the same: `30186-en_US`
-
-These links should also resolve to the same job:
-
-- `https://careers.amgen.com/en/job/-/-/87/93284715648?src=Linkedin&jr_id=69c7ec581818a24cd84d24d5`
-- `https://careers.amgen.com/en/job/cambridge/process-development-associate/87/93284715648`
-
-Because the stable job identifier is the same: `93284715648`
-
-## Planned Stack
-
-- Next.js
-- Clerk with Google sign-in
+- Next.js App Router
+- Clerk
 - Convex
+- Tailwind CSS
+- Vitest
 
-## Data Model
+## Local setup
 
-Core entities:
-- `workspaces`
-- `users`
-- `jobs`
-- `applications`
+1. Install dependencies
 
-Suggested canonical job fields:
-- `companyName`
-- `jobTitle`
-- `jobLocation`
-- `externalJobId`
-- `canonicalKey`
-- `sourceUrls`
+```bash
+npm install
+```
 
-Suggested application fields:
-- `jobId`
-- `userId`
-- `appliedAt`
-- `resumeVersion`
-- `profileLabel`
-- `notes`
+2. Copy the environment template
 
-## Repository Notes
+```bash
+cp .env.example .env.local
+```
 
-The approved product design is documented in:
+3. Fill in the required values
+
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+- `NEXT_PUBLIC_CONVEX_URL`
+- `CLERK_JWT_ISSUER_DOMAIN`
+- `ALLOWED_EMAILS`
+- `HOUSEHOLD_SLUG`
+- `HOUSEHOLD_NAME`
+
+4. Start Convex
+
+```bash
+npx convex dev
+```
+
+5. Start Next.js
+
+```bash
+npm run dev
+```
+
+## Scripts
+
+- `npm run dev`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `npm run convex:dev`
+- `npm run convex:codegen`
+
+## Notes
+
+- The current implementation supports one shared household workspace in v1.
+- Access is restricted by the `ALLOWED_EMAILS` allowlist.
+- Convex was configured locally during implementation, but you still need your real Clerk issuer domain and app keys for full auth.
+
+## Design doc
 
 - `docs/plans/2026-03-28-sync-job-tracker-design.md`
