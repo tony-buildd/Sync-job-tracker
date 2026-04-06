@@ -22,18 +22,38 @@ type ConvexApplicationResult = {
 /**
  * Check if an error is a Convex application error (ConvexError) indicating
  * the job lacks sufficient identity fields (no canonical key and no overrides).
+ *
+ * Only matches errors whose data string mentions identity-related messages
+ * (e.g. "stable job ID" or "company, title, and location"), NOT other
+ * ConvexErrors like workspace/job creation failures.
  */
 function isInsufficientIdentityError(error: unknown): boolean {
-  return error instanceof ConvexError && typeof error.data === "string";
+  if (!(error instanceof ConvexError) || typeof error.data !== "string") {
+    return false;
+  }
+  const msg = error.data.toLowerCase();
+  return msg.includes("stable job id") || msg.includes("company, title, and location");
 }
 
 /**
  * Check if an error is a Convex system error related to an invalid or
  * non-existent document ID (e.g. malformed matchedJobId).
  * These are plain Errors thrown by Convex internals, not ConvexErrors.
+ *
+ * Only matches errors whose message mentions ID-related issues
+ * (e.g. "Invalid ID", "is not a valid ID", "Could not find" with "ID"),
+ * NOT other system errors like network failures or unexpected crashes.
  */
 function isInvalidIdError(error: unknown): boolean {
-  return error instanceof Error && !(error instanceof ConvexError);
+  if (!(error instanceof Error) || error instanceof ConvexError) {
+    return false;
+  }
+  const msg = error.message.toLowerCase();
+  return (
+    msg.includes("invalid id") ||
+    msg.includes("is not a valid id") ||
+    (msg.includes("could not find") && msg.includes("id"))
+  );
 }
 
 function mapApplications(

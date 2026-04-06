@@ -867,4 +867,139 @@ describe("POST /api/extension/mark-applied", () => {
       expect(body).toHaveProperty("error");
     });
   });
+
+  // =========================================================================
+  // Narrowed error classification
+  // =========================================================================
+
+  describe("error classification specificity", () => {
+    it("returns 500 for workspace creation ConvexError (not identity-related)", async () => {
+      setAuthenticatedUser("allowed@example.com");
+      mockMutation.mockRejectedValue(
+        new ConvexError("Unable to initialize the shared workspace."),
+      );
+
+      const response = await POST(
+        buildRequest({
+          originalUrl:
+            "https://jobs.nutrien.com/North-America/job/Process-Engineer/30186-en_US/",
+        }),
+      );
+
+      expect(response.status).toBe(500);
+    });
+
+    it("returns 500 for job record creation ConvexError (not identity-related)", async () => {
+      setAuthenticatedUser("allowed@example.com");
+      mockMutation.mockRejectedValue(
+        new ConvexError("Unable to create or locate the canonical job record."),
+      );
+
+      const response = await POST(
+        buildRequest({
+          originalUrl:
+            "https://jobs.nutrien.com/North-America/job/Process-Engineer/30186-en_US/",
+        }),
+      );
+
+      expect(response.status).toBe(500);
+    });
+
+    it("returns 400 only for identity-related ConvexError", async () => {
+      setAuthenticatedUser("allowed@example.com");
+      mockMutation.mockRejectedValue(
+        new ConvexError(
+          "This job needs either a stable job ID or an exact company, title, and location before it can be saved as applied.",
+        ),
+      );
+
+      const response = await POST(
+        buildRequest({ originalUrl: "https://example.com/" }),
+      );
+
+      expect(response.status).toBe(400);
+    });
+
+    it("does not retry on non-ID-related plain Error when matchedJobId is set", async () => {
+      setAuthenticatedUser("allowed@example.com");
+      // A generic network/system error that is NOT about an invalid ID
+      mockMutation.mockRejectedValue(
+        new Error("Network timeout connecting to Convex"),
+      );
+
+      const response = await POST(
+        buildRequest({
+          originalUrl:
+            "https://jobs.nutrien.com/North-America/job/Process-Engineer/30186-en_US/",
+          matchedJobId: "some-job-id",
+        }),
+      );
+      const body = await response.json();
+
+      // Should NOT retry — should return 500 directly
+      expect(response.status).toBe(500);
+      expect(body).toHaveProperty("error");
+      // Only called once (no retry)
+      expect(mockMutation).toHaveBeenCalledTimes(1);
+    });
+
+    it("retries without matchedJobId only for ID-related errors", async () => {
+      setAuthenticatedUser("allowed@example.com");
+      // First call fails with an ID-related error
+      mockMutation
+        .mockRejectedValueOnce(new Error("Invalid ID: 'bad-id'"))
+        .mockResolvedValueOnce(makeConvexMarkResponse());
+
+      const response = await POST(
+        buildRequest({
+          originalUrl:
+            "https://jobs.nutrien.com/North-America/job/Process-Engineer/30186-en_US/",
+          matchedJobId: "bad-id",
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(mockMutation).toHaveBeenCalledTimes(2);
+    });
+
+    it("retries for 'is not a valid ID' error format", async () => {
+      setAuthenticatedUser("allowed@example.com");
+      mockMutation
+        .mockRejectedValueOnce(
+          new Error("'abc123' is not a valid ID for table 'jobs'"),
+        )
+        .mockResolvedValueOnce(makeConvexMarkResponse());
+
+      const response = await POST(
+        buildRequest({
+          originalUrl:
+            "https://jobs.nutrien.com/North-America/job/Process-Engineer/30186-en_US/",
+          matchedJobId: "abc123",
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(mockMutation).toHaveBeenCalledTimes(2);
+    });
+
+    it("retries for 'Could not find document with ID' error format", async () => {
+      setAuthenticatedUser("allowed@example.com");
+      mockMutation
+        .mockRejectedValueOnce(
+          new Error("Could not find document with ID 'nonexistent123'"),
+        )
+        .mockResolvedValueOnce(makeConvexMarkResponse());
+
+      const response = await POST(
+        buildRequest({
+          originalUrl:
+            "https://jobs.nutrien.com/North-America/job/Process-Engineer/30186-en_US/",
+          matchedJobId: "nonexistent123",
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(mockMutation).toHaveBeenCalledTimes(2);
+    });
+  });
 });
