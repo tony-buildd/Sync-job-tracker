@@ -1,0 +1,45 @@
+{
+  "featureId": "web-fallback-page",
+  "reviewedAt": "2026-04-06T06:30:00.000Z",
+  "commitId": "31049db",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Implementation correctly covers all six VAL-FALLBACK requirements. The page (src/app/extension/check/page.tsx) is a Next.js server component that checks Clerk auth state and renders three branches: SignInPrompt for signed-out users (with URL preserved via forceRedirectUrl), AccessDenied for non-allowlisted users, and ExtensionJobChecker for authorized users with prefillUrl passed through. URL validation is robust — handles missing, empty, array, and malformed URLs without crashing. The ExtensionJobChecker client component (src/components/extension-job-checker.tsx) auto-triggers check via useEffect with a hasAutoTriggered guard, uses fetch API to hit /api/extension/check and /api/extension/mark-applied routes, and provides full result display with mark-applied form. Tests (22 cases) thoroughly cover the server component layer including all auth states, URL edge cases, name resolution fallbacks, and URL encoding preservation. No blocking issues found.",
+    "issues": [
+      {
+        "file": "src/components/extension-job-checker.tsx",
+        "line": 1,
+        "severity": "non_blocking",
+        "description": "Architecture doc key invariant #7 states: 'The fallback page reuses existing components — no parallel UI implementation.' However, a new 519-line ExtensionJobChecker was created instead of reusing the existing JobChecker from src/components/job-checker.tsx. The feature description permits this ('create a variant that accepts a prefilled URL prop'), but the architecture doc is now inaccurate. The deviation is justified: JobChecker uses the Convex React SDK (useAction/useMutation) while ExtensionJobChecker uses fetch to API routes, making direct reuse impractical without significant refactoring."
+      },
+      {
+        "file": "src/components/extension-job-checker.tsx",
+        "line": 22,
+        "severity": "non_blocking",
+        "description": "Substantial code duplication with src/components/job-checker.tsx. STATUS_COPY (lines 22-52), buildInitialSaveForm (lines 54-63), formatDate (lines 65-70), canSaveAppliedJob (lines 72-78), isValidUrl (lines 80-87), and the entire save form UI section are near-identical between both files. These shared utilities and UI fragments could be extracted to reduce future maintenance burden."
+      },
+      {
+        "file": "src/components/extension-job-checker.tsx",
+        "line": 140,
+        "severity": "non_blocking",
+        "description": "The ExtensionJobChecker client component has no test coverage. Only the server component page is tested (auth gating, prop passing, URL validation). The client-side behavior — auto-trigger via useEffect, fetch call error handling, mark-applied submission, form state management — is untested. The feature description asked for 'tests covering the page rendering with various states' which the existing tests satisfy, but the client component is a meaningful gap in coverage for a 519-line component."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "Architecture doc key invariant #7 is now inaccurate. It states 'The fallback page reuses existing components. /extension/check?url=... renders the same JobChecker — no parallel UI implementation.' The implementation creates a new ExtensionJobChecker component that uses fetch API routes instead of the Convex React SDK. The architecture doc should be updated to reflect this design decision.",
+      "evidence": ".factory/library/architecture.md Section 9, invariant #7 vs. actual implementation at src/components/extension-job-checker.tsx (519 lines, uses fetch) compared to src/components/job-checker.tsx (uses useAction/useMutation from Convex React SDK)"
+    },
+    {
+      "area": "skills",
+      "observation": "The backend-worker skill says 'Write Tests First (TDD)' but provides no guidance for testing Next.js server components without @testing-library/react. The worker had to develop a custom approach: calling the async server component function directly, inspecting the returned JSX element tree via $$typeof/type/props traversal, and mocking client components to return inspectable objects. This pattern should be documented in the skill.",
+      "evidence": "Worker skillFeedback.suggestedChanges: 'The backend-worker skill mentions TDD with failing tests first, but for Next.js server component pages without @testing-library/react, writing tests that inspect the React element tree directly requires understanding the JSX element structure ({$$typeof, type, props}). Consider adding guidance for testing server components without a DOM environment.' Test file src/app/extension/check/__tests__/page.test.ts demonstrates the pattern (findChildByType, serializeTree helpers)."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The web fallback page implementation correctly fulfills all six VAL-FALLBACK requirements: authenticated allowlisted users see the pre-filled checker with auto-trigger (001), signed-out users see a sign-in prompt with URL preservation (002, 005), results display status/fields/history (003), non-allowlisted users see access denied (004), and missing/invalid URLs are handled gracefully (006). Three non-blocking issues noted: (1) architecture doc now inaccurate about component reuse, (2) significant code duplication with the existing JobChecker, (3) no client component test coverage for ExtensionJobChecker. The 22 server component tests are comprehensive for auth gating and URL handling. Two shared state observations flagged for the validator."
+}

@@ -1,0 +1,51 @@
+{
+  "featureId": "api-mark-route",
+  "reviewedAt": "2026-04-06T06:30:00.000Z",
+  "commitId": "41c12d9",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation is solid and complete. The route handler at src/app/api/extension/mark-applied/route.ts correctly implements all 11 VAL-MARK assertions plus VAL-CROSS-007. Auth pattern matches the check route exactly (401/403 with distinct messages). Input validation uses markAppliedRequestSchema. Override fields are trimmed, whitespace-only metadata is normalized to undefined (so Convex stores null). matchedJobId retry logic gracefully handles invalid/non-existent IDs. Response is explicitly constructed to match MarkAppliedResponse type with no workspaceId leaks. The test suite has 23 tests with thorough coverage of all validation assertions. Tests correctly mock Clerk auth and ConvexHttpClient at the right boundaries.",
+    "issues": [
+      {
+        "file": "src/app/api/extension/mark-applied/route.ts",
+        "line": 146,
+        "severity": "non_blocking",
+        "description": "Fragile string matching for error classification. The route detects Convex error types by checking message.includes('stable job ID'), message.includes('Invalid ID'), etc. If Convex changes its error messages, the route will return wrong status codes (500 instead of 400). A more robust approach would be to check for ConvexError type or attach structured error codes. However, since ConvexHttpClient serializes errors over HTTP, typed error checking may not be straightforward."
+      },
+      {
+        "file": "src/app/api/extension/mark-applied/route.ts",
+        "line": 159,
+        "severity": "non_blocking",
+        "description": "Redundant token and client creation on matchedJobId retry path. When the first Convex call fails due to an invalid matchedJobId, the catch block calls getToken() again and creates a new ConvexHttpClient. The token and client from the initial try block could be hoisted above the try/catch to be reused, avoiding an extra Clerk API call and object allocation."
+      },
+      {
+        "file": "src/app/api/extension/mark-applied/__tests__/route.test.ts",
+        "line": 487,
+        "severity": "non_blocking",
+        "description": "Test 'non-existent matchedJobId falls through gracefully' mocks Convex throwing 'Could not find document' for a non-existent ID. In practice, Convex's ctx.db.get() returns null for non-existent documents (doesn't throw). The mutation internally handles this by falling through to canonical key lookup without error. The route's retry path for 'Could not find' would never be triggered for truly non-existent IDs — only for IDs that fail Convex's v.id() validator. The test still verifies correct route behavior defensively, but the scenario doesn't match actual Convex behavior."
+      },
+      {
+        "file": "src/app/api/extension/mark-applied/__tests__/route.test.ts",
+        "line": 0,
+        "severity": "non_blocking",
+        "description": "No test for whitespace-only override fields (e.g., companyName: '   '). The route normalizes these to undefined so they don't override URL-parsed values. This is reasonable behavior but isn't explicitly tested. A test like: send companyName: '   ', verify Convex receives companyName: undefined (not '   ' or '') would strengthen coverage."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "Worker did not strictly follow TDD as prescribed by the backend-worker skill. The skill says 'Write Tests First (TDD): Before any implementation, create or update test files... Run npm test to confirm tests fail (red phase)'. The worker created both the route implementation and test file in the same step, then ran tests only after both were written. While the final result is correct, the red-green-refactor cycle was skipped.",
+      "evidence": "Transcript skeleton shows: Create route.ts (6678 chars) → Create route.test.ts (29516 chars) → npm test (all pass). No intermediate 'tests fail' step."
+    },
+    {
+      "area": "conventions",
+      "observation": "Both the check route and mark-applied route have identical auth blocks (~15 lines each: auth(), userId check → 401, email allowlist check → 403). This duplicated pattern could be extracted into a shared auth utility. AGENTS.md documents the pattern as inline code but doesn't mention extraction. With two routes using identical auth logic, and more routes likely coming, a shared helper would reduce duplication and ensure consistency.",
+      "evidence": "src/app/api/extension/check/route.ts lines 10-24 and src/app/api/extension/mark-applied/route.ts lines 38-52 are nearly identical auth blocks."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The POST /api/extension/mark-applied route is well-implemented with correct auth gating (401/403 with distinct messages), Zod input validation, override field trimming, whitespace-only metadata normalization, graceful matchedJobId fallthrough via retry, and explicit MarkAppliedResponse construction that prevents workspaceId leaks. The 23-test suite covers all 11 VAL-MARK assertions plus VAL-CROSS-007. Four non-blocking issues identified: fragile string-based error classification, redundant token/client creation on retry, one test scenario that doesn't match actual Convex behavior, and missing test for whitespace-only override fields. Two shared state observations: TDD not strictly followed per skill procedure, and duplicated auth blocks could be extracted."
+}

@@ -1,0 +1,102 @@
+{
+  "milestone": "api-layer",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "test": { "passed": true, "command": "npm test", "exitCode": 0, "detail": "88 tests passed across 5 files (377ms)" },
+    "typecheck": { "passed": true, "command": "npx tsc --noEmit", "exitCode": 0 },
+    "lint": { "passed": true, "command": "npm run lint", "exitCode": 0 }
+  },
+  "reviewsSummary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "nonBlockingIssues": [
+    {
+      "featureId": "shared-extension-types",
+      "severity": "non_blocking",
+      "description": "Redundant .min(1) on z.url() in Zod schemas — z.url() already rejects empty strings in Zod v4."
+    },
+    {
+      "featureId": "api-check-route",
+      "severity": "non_blocking",
+      "description": "Non-null assertions on getToken() result and NEXT_PUBLIC_CONVEX_URL env var — consistent with project-wide pattern but a defensive null check would be more robust."
+    },
+    {
+      "featureId": "api-check-route",
+      "severity": "non_blocking",
+      "description": "Test for very long URL (VAL-CHECK-009) only covers Convex-succeeds path; doesn't test Convex-rejects-long-URL path. Safe in practice since Convex parsing handles arbitrary-length strings."
+    },
+    {
+      "featureId": "api-mark-route",
+      "severity": "non_blocking",
+      "description": "Fragile string-based error matching (message.includes()) for Convex error classification. Could break if Convex error messages change."
+    },
+    {
+      "featureId": "api-mark-route",
+      "severity": "non_blocking",
+      "description": "Redundant getToken() + ConvexHttpClient creation on matchedJobId retry path — could hoist above try/catch to avoid extra Clerk API call."
+    },
+    {
+      "featureId": "api-mark-route",
+      "severity": "non_blocking",
+      "description": "Test for non-existent matchedJobId mocks Convex throwing 'Could not find document', but in practice Convex db.get() returns null for non-existent docs (doesn't throw). Test scenario doesn't match actual Convex behavior, though route defensiveness is still valuable."
+    },
+    {
+      "featureId": "api-mark-route",
+      "severity": "non_blocking",
+      "description": "No test for whitespace-only override fields (e.g., companyName: '   ') verifying they don't override URL-parsed values."
+    },
+    {
+      "featureId": "web-fallback-page",
+      "severity": "non_blocking",
+      "description": "ExtensionJobChecker (519 lines) has significant code duplication with existing JobChecker — shared utilities (STATUS_COPY, formatDate, canSaveAppliedJob, isValidUrl) and form UI could be extracted."
+    },
+    {
+      "featureId": "web-fallback-page",
+      "severity": "non_blocking",
+      "description": "ExtensionJobChecker client component has no test coverage. Only the server component page (auth gating, URL handling) is tested. The 519-line client component's fetch logic, auto-trigger, and form state are untested."
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "library",
+      "description": "Updated architecture.md invariant #7 to reflect that the fallback page uses a dedicated ExtensionJobChecker component (fetch-based) rather than reusing the existing JobChecker (Convex React SDK). The original invariant was inaccurate after implementation.",
+      "sourceFeature": "web-fallback-page"
+    }
+  ],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "skills",
+      "suggestion": "Update the backend-worker skill to correct the error response pattern. The skill currently says error responses should use '{ error: string, code: string }' shape, but the project convention (established in AGENTS.md and both API routes) is '{ error: string }' without a code field.",
+      "evidence": "api-check-route review: SKILL.md 'Key patterns to follow' section says '{ error: string, code: string }' but both check/route.ts and mark-applied/route.ts use '{ error: string }' per AGENTS.md convention.",
+      "isSystemic": true
+    },
+    {
+      "target": "skills",
+      "suggestion": "Add guidance to the backend-worker skill for testing Next.js server components without @testing-library/react. Workers need patterns for: calling async server component functions directly, inspecting returned JSX element trees via $$typeof/type/props traversal, and mocking client components to return inspectable objects.",
+      "evidence": "web-fallback-page review: Worker developed custom server component testing pattern in src/app/extension/check/__tests__/page.test.ts (findChildByType, serializeTree helpers). This non-obvious pattern should be documented for future workers.",
+      "isSystemic": false
+    },
+    {
+      "target": "skills",
+      "suggestion": "Consider relaxing or clarifying TDD enforcement in the backend-worker skill. Multiple workers wrote implementation + tests in the same step rather than red-green-refactor. The skill says 'Write Tests First' but workers consistently skip the red phase, suggesting the instruction may be impractical for API route work where the shape of mocks depends on the implementation.",
+      "evidence": "api-mark-route and web-fallback-page reviews both noted workers created implementation and tests together rather than tests-first. This pattern repeated across 2 of 4 features.",
+      "isSystemic": true
+    }
+  ],
+  "rejectedObservations": [
+    {
+      "observation": "Redundant .min(1) on z.url() could be documented as a convention note in AGENTS.md.",
+      "reason": "Too minor to warrant documentation. The redundancy causes no harm and future workers will naturally follow whichever pattern they find in existing code."
+    },
+    {
+      "observation": "Duplicated auth blocks across check and mark-applied routes could be extracted into a shared utility.",
+      "reason": "Premature abstraction. Only 2 routes exist currently. AGENTS.md already documents the inline pattern. If more routes are added in the future, extraction can be considered then."
+    }
+  ],
+  "previousRound": null
+}

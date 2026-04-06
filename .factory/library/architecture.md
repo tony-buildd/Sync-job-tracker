@@ -275,6 +275,6 @@ extension/
 
 6. **Existing web app behavior is unchanged.** The extension is additive. The web UI at `/` continues to work exactly as before.
 
-7. **The fallback page reuses existing components.** `/extension/check?url=...` renders the same `JobChecker` — no parallel UI implementation.
+7. **The fallback page uses a dedicated client component.** `/extension/check?url=...` renders `ExtensionJobChecker` (not the main `JobChecker`), because the fallback page uses `fetch` to call API routes while `JobChecker` uses the Convex React SDK directly. The two components share visual patterns and utility logic but are separate implementations.
 
 8. **Application records are idempotent.** Marking the same (job, user) pair as applied twice does not create duplicate application records.

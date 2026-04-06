@@ -1,0 +1,28 @@
+{
+  "featureId": "shared-extension-types",
+  "reviewedAt": "2026-04-06T06:10:00.000Z",
+  "commitId": "46737e3",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Implementation correctly fulfills all requirements. shared/extension-api.ts exports all 5 required types (CheckRequest, CheckResponse, MarkAppliedRequest, MarkAppliedResponse, ErrorResponse) plus 3 supporting types (ExtensionParsedJob, MatchedJob, ApplicationSummary). Two Zod schemas (checkRequestSchema, markAppliedRequestSchema) validate inputs correctly. ExtensionParsedJob contains exactly the 5 public fields and excludes all internal normalization fields (normalizedCompany, normalizedTitle, normalizedLocation, primaryCanonicalKey, fallbackCanonicalKey). Types correctly import MatchStatus and MatchConfidence from job-matching.ts. The nullable field pattern (string | null instead of string | undefined) is appropriate for JSON API responses. 19 tests provide good coverage of schema validation and type shape verification.",
+    "issues": [
+      {
+        "file": "shared/extension-api.ts",
+        "line": 10,
+        "severity": "non_blocking",
+        "description": "z.url().min(1, 'URL must not be empty') — the .min(1) check is redundant. Zod v4's z.url() already rejects empty strings with 'Invalid URL', so the .min(1) never triggers independently. Same applies to line 14 (markAppliedRequestSchema.originalUrl). Not harmful, just unnecessary."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The Zod URL validation pattern uses z.url().min(1), but .min(1) is redundant since z.url() in Zod v4 already rejects empty strings. Future workers may copy this pattern unnecessarily. Consider noting in AGENTS.md that z.url() alone is sufficient for non-empty URL validation.",
+      "evidence": "shared/extension-api.ts:10 — z.url().min(1, 'URL must not be empty'). Verified via Node.js REPL that z.url().safeParse('') returns {success: false} with 'Invalid URL' error before the min check fires."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Feature shared-extension-types passes review. The implementation in shared/extension-api.ts correctly defines all required TypeScript types and Zod validation schemas per the feature specification. ExtensionParsedJob properly excludes internal normalization fields. Both Zod schemas validate URL inputs correctly. 19 tests cover schema validation (valid/invalid inputs for both schemas) and compile-time type shape verification for all exported types. The only non-blocking issue is a redundant .min(1) call on z.url() which doesn't cause any problems but is unnecessary. The worker followed the backend-worker skill TDD procedure correctly, all verification commands passed cleanly (npm test, tsc --noEmit, npm run lint), and the commit is well-scoped with a clear message."
+}

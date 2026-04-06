@@ -1,0 +1,40 @@
+{
+  "featureId": "api-check-route",
+  "reviewedAt": "2026-04-06T06:15:00.000Z",
+  "commitId": "849ae9e",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Clean, well-structured implementation of POST /api/extension/check. The route correctly implements all 5 requirements: Clerk auth with distinct 401/403 messages, Zod input validation with safe JSON parsing, ConvexHttpClient proxy with JWT, response mapping that explicitly constructs parsedJob with only 5 public fields (stripping all 5 internal fields), and graceful error handling. The 20 vitest tests are comprehensive and cover all VAL-CHECK assertions plus VAL-CROSS-006. The code follows the established pattern from the mark-applied route and matches AGENTS.md conventions. No blocking issues found.",
+    "issues": [
+      {
+        "file": "src/app/api/extension/check/route.ts",
+        "line": 53,
+        "severity": "non_blocking",
+        "description": "Non-null assertion on getToken result: `client.setAuth(token!)`. If the 'convex' JWT template is misconfigured in Clerk, getToken returns null, and setAuth(null) may cause opaque Convex errors downstream. This is consistent with the mark-applied route and AGENTS.md pattern, so not a code quality issue per se — but a defensive `if (!token) return 500` guard before setAuth would be more robust. Non-blocking because the pattern is project-wide and the Convex action's own auth check provides a second layer."
+      },
+      {
+        "file": "src/app/api/extension/check/route.ts",
+        "line": 52,
+        "severity": "non_blocking",
+        "description": "Non-null assertion on NEXT_PUBLIC_CONVEX_URL: `process.env.NEXT_PUBLIC_CONVEX_URL!`. If the env var is unset, ConvexHttpClient constructor throws, which is caught and returns 500 with the raw error message. Consistent with the mark-applied route. The error message could potentially leak the env var name, but since it's a public URL env var, this is low-risk."
+      },
+      {
+        "file": "src/app/api/extension/check/__tests__/route.test.ts",
+        "line": 445,
+        "severity": "non_blocking",
+        "description": "The 'very long URL' test (VAL-CHECK-009) mocks Convex to succeed, verifying the route returns 200. However, it doesn't test the case where Convex might reject a very long URL (which would currently return 500). The spec says 'never 500' for long URLs. In practice, Convex's parseJobUrl handles arbitrary-length strings without throwing, and Convex payload limits far exceed 2048 chars, so this is safe in the real system. But the test doesn't fully prove the 'never 500' guarantee for all possible Convex behaviors. Non-blocking because the real Convex action is pure parsing that won't throw on long strings."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The backend-worker SKILL.md (Work Procedure section, step 1) says error responses should use `{ error: string, code: string }` shape, but the actual implemented pattern (matching AGENTS.md and both routes) is `{ error: string }` without a `code` field. The skill file has a stale error response pattern that contradicts the project convention.",
+      "evidence": "SKILL.md line in 'Key patterns to follow': 'Error responses: return JSON with { error: string, code: string } shape' vs actual routes (check/route.ts, mark-applied/route.ts) and AGENTS.md which all use { error: string } only."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The POST /api/extension/check route is a clean, thin proxy that correctly authenticates via Clerk (401/403 with distinct messages), validates input with Zod (400 for all bad input variants including invalid JSON), proxies to Convex checkUrl via ConvexHttpClient with JWT, and returns a CheckResponse with parsedJob stripped of all 5 internal fields. The 20 vitest tests comprehensively cover all 11 validation assertions (VAL-CHECK-001 through VAL-CHECK-010 plus VAL-CROSS-006). The implementation follows established patterns from the mark-applied route and AGENTS.md conventions. Three non-blocking observations noted: non-null assertions on getToken/env var (consistent with project pattern), and a minor test coverage gap for Convex-rejected long URLs (safe in practice). One shared-state observation: the backend-worker skill file has a stale error response pattern."
+}
