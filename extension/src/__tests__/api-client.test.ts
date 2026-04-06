@@ -385,3 +385,120 @@ describe("error type differentiation", () => {
     expect(timeoutError).not.toBeInstanceOf(NetworkError);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Malformed JSON response fallback paths
+// ---------------------------------------------------------------------------
+
+describe("handleResponse .catch() fallback for non-JSON bodies", () => {
+  function textResponse(body: string, status: number): Response {
+    return new Response(body, {
+      status,
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
+
+  it("401 with non-JSON body falls back to default AuthError message", async () => {
+    mockFetch(async () => textResponse("Unauthorized", 401));
+
+    try {
+      await checkUrl("https://example.com/job/123");
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(AuthError);
+      expect((err as AuthError).status).toBe(401);
+      expect((err as AuthError).message).toBe("Authentication required");
+    }
+  });
+
+  it("403 with non-JSON body falls back to default ForbiddenError message", async () => {
+    mockFetch(async () => textResponse("Forbidden", 403));
+
+    try {
+      await checkUrl("https://example.com/job/123");
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ForbiddenError);
+      expect((err as ForbiddenError).message).toBe("Not authorized");
+    }
+  });
+
+  it("non-ok status with non-JSON body falls back to HTTP status ApiError", async () => {
+    mockFetch(async () => textResponse("Bad Request", 400));
+
+    try {
+      await checkUrl("https://example.com/job/123");
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).status).toBe(400);
+      expect((err as ApiError).message).toBe("HTTP 400");
+    }
+  });
+
+  it("500 with HTML error page falls back to HTTP status ApiError", async () => {
+    mockFetch(async () =>
+      new Response("<html><body>Internal Server Error</body></html>", {
+        status: 500,
+        headers: { "Content-Type": "text/html" },
+      })
+    );
+
+    try {
+      await markApplied({ originalUrl: "https://example.com/job/123" });
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).status).toBe(500);
+      expect((err as ApiError).message).toBe("HTTP 500");
+    }
+  });
+
+  it("401 with malformed JSON body falls back to default message", async () => {
+    mockFetch(async () =>
+      new Response("{{{invalid json", {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    try {
+      await checkUrl("https://example.com/job/123");
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(AuthError);
+      expect((err as AuthError).status).toBe(401);
+      expect((err as AuthError).message).toBe("Authentication required");
+    }
+  });
+
+  it("403 with malformed JSON body falls back to default message", async () => {
+    mockFetch(async () =>
+      new Response("{not valid json}", {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    try {
+      await markApplied({ originalUrl: "https://example.com/job/123" });
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ForbiddenError);
+      expect((err as ForbiddenError).message).toBe("Not authorized");
+    }
+  });
+
+  it("non-ok with empty response body falls back to HTTP status", async () => {
+    mockFetch(async () => new Response("", { status: 502 }));
+
+    try {
+      await checkUrl("https://example.com/job/123");
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).status).toBe(502);
+      expect((err as ApiError).message).toBe("HTTP 502");
+    }
+  });
+});
