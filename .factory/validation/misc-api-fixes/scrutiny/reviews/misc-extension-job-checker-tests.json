@@ -1,0 +1,44 @@
+{
+  "featureId": "misc-extension-job-checker-tests",
+  "reviewedAt": "2026-04-06T07:39:30.000Z",
+  "commitId": "1d3d894",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Comprehensive 42-test suite for ExtensionJobChecker client component using @testing-library/react with happy-dom. Tests are well-organized into 8 describe blocks covering auto-trigger, all 4 result states, error handling (network/401/403/500/JSON-parse-failure), mark-applied form submission with metadata and matchedJobId, loading state transitions with deferred promises, manual interaction flows, form editing, and description text variations. All 130 tests (42 new + 88 existing) pass. Typecheck and lint clean. The test correctly identifies that after a successful mark-applied, the component transitions to 'already_applied' status which hides the mark-applied section (including the saveSuccess message), and tests the actual behavior accordingly.",
+    "issues": [
+      {
+        "file": "package.json",
+        "line": null,
+        "severity": "non_blocking",
+        "description": "@testing-library/jest-dom was installed as a dev dependency but is never imported or used in any test file. The tests use toBeTruthy()/toBeNull() instead of jest-dom matchers like toBeInTheDocument(). The dependency is dead weight and could be removed."
+      },
+      {
+        "file": "src/components/extension-job-checker.tsx",
+        "line": 208,
+        "severity": "non_blocking",
+        "description": "Component UX observation (not a test bug): After handleMarkApplied succeeds, setSaveSuccess('Saved as an applied job...') is called, but the success message is rendered inside the `result.status !== 'already_applied'` block. Since setResult also transitions to 'already_applied' in the same render cycle, the success message is effectively dead code — it's set but never displayed. The test correctly tests the actual behavior (verifying state transition to 'Already applied' instead of checking for the success text)."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "Worker installed @testing-library/react, @testing-library/user-event, @testing-library/jest-dom, and happy-dom as new dev dependencies for client component testing. AGENTS.md testing section only mentions vitest patterns and mocking Clerk/Convex but doesn't document the DOM testing library setup or the `@vitest-environment happy-dom` comment directive needed for component tests. Future workers writing client component tests won't know these libraries are available or which environment directive to use.",
+      "evidence": "AGENTS.md Testing section says 'Follow existing vitest patterns in shared/job-matching.test.ts' and 'Mock Clerk auth and ConvexHttpClient in API route tests' — no mention of @testing-library/react or happy-dom. The test file uses `/** @vitest-environment happy-dom */` directive at the top."
+    },
+    {
+      "area": "conventions",
+      "observation": "Worker discovered that jsdom doesn't work with Node.js ESM modules (the project uses Node 22+), requiring a fallback to happy-dom. This is an environment-specific gotcha that should be documented to prevent future workers from wasting time on the same discovery.",
+      "evidence": "Transcript shows worker first installed jsdom, hit ESM compatibility errors, then switched to happy-dom. The vitest.config.ts uses default environment (node), and the component test uses per-file `@vitest-environment happy-dom` override."
+    },
+    {
+      "area": "skills",
+      "observation": "The backend-worker skill mandates 'Write Tests First (TDD)' with a red-green cycle, but this feature is test-only (adding tests for an existing component). The worker correctly identified this doesn't apply and noted it in skillFeedback.suggestedChanges. The skill procedure could clarify that test-only features skip the red phase.",
+      "evidence": "handoff.skillFeedback.suggestedChanges: 'The backend-worker skill says Write Tests First (TDD) but for a test-only feature there's no implementation to drive, so the TDD red-green cycle doesn't apply. Could clarify that test-only features skip the red phase.'"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The 42-test suite comprehensively covers the ExtensionJobChecker component as specified: auto-trigger on mount with prefillUrl, all 4 result states (new, already_applied, possible_duplicate, unparseable), error handling for network failures and HTTP errors (401/403/500/JSON-parse), mark-applied form submission with field editing and optional metadata, loading state transitions for both check and save flows, and manual interaction without prefillUrl. Tests are well-structured with proper cleanup, good mocking patterns (deferred promises for timing control), and accurate assertions matching the actual component behavior. Two non-blocking issues noted: (1) @testing-library/jest-dom installed but unused, (2) component's saveSuccess message is dead code due to simultaneous state transition. All 130 tests pass, typecheck clean, lint clean."
+}

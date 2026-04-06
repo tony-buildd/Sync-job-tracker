@@ -1,0 +1,39 @@
+{
+  "featureId": "misc-mark-route-error-handling",
+  "reviewedAt": "2026-04-06T07:50:00.000Z",
+  "commitId": "f132bc3ba37c72cdcde9b2536da65bc61bf02853",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The implementation replaces string-based error matching with two helper functions (isInsufficientIdentityError, isInvalidIdError) that use instanceof checks. While the approach correctly leverages ConvexError type discrimination, both helpers are over-broad and introduce behavioral regressions that violate the feature's 'No behavioral change' requirement. isInsufficientIdentityError matches ANY ConvexError with string data — but convex/jobs.ts throws 5 different ConvexErrors with string data (auth errors, insufficient identity, 'Unable to create or locate the canonical job record', 'Unable to initialize the shared workspace'). Server-side ConvexErrors like workspace/job creation failures would now incorrectly return 400 instead of 500. isInvalidIdError matches ANY non-ConvexError Error, meaning when matchedJobId is present, network errors, timeouts, or other transient failures would trigger the retry path instead of returning 500 immediately.",
+    "issues": [
+      {
+        "file": "src/app/api/extension/mark-applied/route.ts",
+        "line": 30,
+        "severity": "blocking",
+        "description": "isInsufficientIdentityError is too broad: it returns true for ANY ConvexError with string data (`error instanceof ConvexError && typeof error.data === 'string'`). However, convex/jobs.ts throws multiple ConvexErrors with string data — e.g. 'Unable to create or locate the canonical job record.' (line 224) and 'Unable to initialize the shared workspace.' (line 297). These are server-side failures that should return 500, but isInsufficientIdentityError matches them and causes a 400 response. The fix should also check error.data content, e.g.: `error instanceof ConvexError && typeof error.data === 'string' && (error.data.includes('stable job ID') || error.data.includes('company, title, and location'))`. This combines structured type checking with specific content matching on the typed `data` field rather than the raw `message`, which is still more robust than the original approach."
+      },
+      {
+        "file": "src/app/api/extension/mark-applied/route.ts",
+        "line": 37,
+        "severity": "non_blocking",
+        "description": "isInvalidIdError is too broad: it matches ANY Error that is not a ConvexError (`error instanceof Error && !(error instanceof ConvexError)`). When matchedJobId is present, this means network errors, timeouts, or runtime exceptions would trigger the retry path instead of immediately returning 500. The old code only retried for errors containing 'Invalid ID', 'Could not find', or 'is not a valid ID'. While the retry is generally harmless (it returns 500 on retry failure anyway), it introduces unnecessary mutation calls for non-ID errors and violates the 'no behavioral change' requirement. Consider adding a check that the error message relates to document IDs."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The Convex backend (convex/jobs.ts) uses plain string data in all ConvexError throws. Multiple different error types (auth, validation, server) are indistinguishable by type alone — they all produce ConvexError instances with string data. If the project wants to move away from string matching entirely, the Convex functions would need to throw structured error data (e.g. { code: 'INSUFFICIENT_IDENTITY', message: '...' }). However, AGENTS.md prohibits modifying convex/jobs.ts, so API routes must combine instanceof ConvexError with data content checks for correct error classification.",
+      "evidence": "convex/jobs.ts lines 32, 36, 191, 224, 297 — five different ConvexError throws, all with plain string data, representing auth errors, business logic errors, and server errors."
+    },
+    {
+      "area": "conventions",
+      "observation": "AGENTS.md documents the API route pattern but does not document the error handling pattern (how to classify ConvexError vs plain Error from Convex, or the matchedJobId retry fallback logic). This would help future workers understand the intended error classification strategy.",
+      "evidence": "AGENTS.md 'API route pattern' section shows the general route structure but omits error handling. The mark-applied route has complex error classification logic (ConvexError → 400 for specific cases, plain Error → retry with matchedJobId fallback, generic → 500) that isn't documented."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "FAIL — The implementation correctly identifies the right approach (instanceof ConvexError for type discrimination) but both helper functions are over-broad, introducing behavioral regressions. The blocking issue is that isInsufficientIdentityError matches ALL ConvexErrors with string data, not just the insufficient-identity error. This means server errors like 'Unable to create or locate the canonical job record' (ConvexError, convex/jobs.ts:224) would incorrectly return 400 instead of 500. The fix is straightforward: add error.data content checks to isInsufficientIdentityError to match only the specific insufficient-identity message, and optionally tighten isInvalidIdError to match ID-related error messages."
+}
