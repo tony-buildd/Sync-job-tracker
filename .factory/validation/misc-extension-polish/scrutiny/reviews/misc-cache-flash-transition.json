@@ -1,0 +1,51 @@
+{
+  "featureId": "misc-cache-flash-transition",
+  "reviewedAt": "2026-04-06T08:10:00.000Z",
+  "commitId": "6d0ae57",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Solid implementation that correctly solves the flashing problem. The worker added a `backgroundRecheck()` function that fetches fresh data without showing a loading spinner, a `getEffectiveState()` function to compare visual states, and a `transitionToNewResult()` function that applies a CSS cross-fade with a 'Status updated' indicator. The DOMContentLoaded handler now branches: cached results use the silent background re-check path, while cache misses use the original full `runCheck()` with loading spinner. CSS animations are clean and well-structured. Error handling appropriately surfaces auth errors while silently keeping cached results on network failures. No bugs found that would block functionality.",
+    "issues": [
+      {
+        "file": "extension/src/popup.ts",
+        "line": 410,
+        "severity": "non_blocking",
+        "description": "getEffectiveState() duplicates the state-determination logic from renderCheckResult() (the switch on data.status plus the company/jobId/title+location branching for 'new'). If renderCheckResult() is ever modified to change its branching, getEffectiveState() must be updated in sync or the transition detection will break. Consider extracting the shared logic into a single function."
+      },
+      {
+        "file": "extension/src/popup.ts",
+        "line": 410,
+        "severity": "non_blocking",
+        "description": "getEffectiveState() is a pure function with no Chrome API dependencies and could be unit tested. The worker classified all new code as UI/DOM-dependent and added no tests, but this specific function is testable."
+      },
+      {
+        "file": "extension/src/popup.ts",
+        "line": 427,
+        "severity": "non_blocking",
+        "description": "transitionToNewResult() uses nested setTimeout chains (200ms → 200ms → 2000ms) without cleanup. If the popup is destroyed mid-animation (user closes it), the callbacks will attempt to access removed DOM elements. In Chrome extension popups this is harmless (errors are silently swallowed), but storing timer IDs for cleanup would be more defensive."
+      },
+      {
+        "file": "extension/src/popup.html",
+        "line": 20,
+        "severity": "non_blocking",
+        "description": "The recheck-spinner (display: inline-block) is placed inside .url-bar after .url-value (display: block). Because .url-value is a block element, the spinner will appear on its own line below the URL text rather than visually 'next to' the URL. The url-bar would need display:flex or the url-value would need display:inline-block/inline for the spinner to appear on the same line."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The popup now has duplicated state-determination logic: getEffectiveState() mirrors the branching in renderCheckResult(). AGENTS.md doesn't document this coupling or warn against divergence. If future features modify one without the other, the transition detection will silently break.",
+      "evidence": "extension/src/popup.ts:410-421 (getEffectiveState) mirrors extension/src/popup.ts:244-264 (renderCheckResult switch/case)"
+    },
+    {
+      "area": "skills",
+      "observation": "The extension-worker skill says 'For testable modules (API client, state management, utility functions): Write failing tests first'. The worker added a pure utility function getEffectiveState() that is trivially testable but classified it as UI-dependent and skipped testing. The skill's TDD guidance could be more explicit about identifying pure functions within UI-heavy features.",
+      "evidence": "getEffectiveState() at popup.ts:410 takes a CheckResponse and returns a string — no DOM or Chrome API access. Handoff tests section says 'No new tests added — the transition logic is UI/DOM-based'."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The implementation correctly eliminates the cached→loading→fresh flash by introducing a background re-check path that silently fetches fresh data and applies a smooth CSS cross-fade transition when the effective state changes. The code is well-structured with clear separation between the cached and uncached paths. Four non-blocking issues noted: (1) duplicated state-determination logic between getEffectiveState() and renderCheckResult(), (2) the pure getEffectiveState() function could have been unit tested, (3) setTimeout chains lack cleanup, (4) the recheck spinner's layout positioning may not render inline with the URL due to block-level siblings. None of these affect core functionality."
+}

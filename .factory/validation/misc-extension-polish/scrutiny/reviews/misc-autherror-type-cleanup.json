@@ -1,0 +1,15 @@
+{
+  "featureId": "misc-autherror-type-cleanup",
+  "reviewedAt": "2026-04-06T08:10:00.000Z",
+  "commitId": "2e9f7eb5529bef5d12f94a9c05a134411fd0e85a",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Clean, well-scoped type narrowing. AuthError.status was narrowed from '401 | 403' to '401' in api-client.ts, matching the sole instantiation site (line 117 passes 401; 403 uses ForbiddenError). In popup.ts, the dead 'err instanceof AuthError && err.status === 403' branch was removed from runCheck()'s catch block, and the redundant 'err.status === 401' guard was dropped since AuthError.status can only be 401. The backgroundRecheck() catch block already had the clean pattern and was unaffected. All 137 existing tests pass including tests that verify AuthError carries status 401 and ForbiddenError handles 403. No behavioral change — only type-level and dead-code cleanup.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Pass. The implementation correctly narrows AuthError.status from '401 | 403' to '401' and removes the unreachable AuthError-with-403 branch in popup.ts. The diff touches exactly 2 files (api-client.ts, popup.ts) with 4 lines changed. All verification commands (build, test, typecheck, lint) pass. No issues found."
+}

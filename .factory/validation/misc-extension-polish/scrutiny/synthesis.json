@@ -1,0 +1,45 @@
+{
+  "milestone": "misc-extension-polish",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "test": { "passed": true, "command": "npm test", "exitCode": 0 },
+    "typecheck": { "passed": true, "command": "npx tsc --noEmit", "exitCode": 0 },
+    "lint": { "passed": true, "command": "npm run lint", "exitCode": 0 }
+  },
+  "reviewsSummary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Add convention: When using Clerk interactive components (SignInButton, UserButton) within server component pages, extract them into dedicated 'use client' wrapper components rather than using them directly. This avoids the React.Children.only serialization error at the server/client boundary.",
+      "evidence": "Feature misc-signinbutton-fix created src/app/extension/check/sign-in-prompt-button.tsx as a 'use client' wrapper to resolve the Clerk console error. src/app/page.tsx line 48 still uses the old pattern and may need the same fix.",
+      "isSystemic": false
+    },
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Add warning about duplicated state-determination logic in popup.ts: getEffectiveState() (line ~410) mirrors the branching in renderCheckResult() (line ~244). Future modifications to popup state rendering must update both functions or transition detection will silently break.",
+      "evidence": "Feature misc-cache-flash-transition introduced getEffectiveState() which duplicates the switch/case logic from renderCheckResult(). Reviewer flagged both sites must be kept in sync.",
+      "isSystemic": false
+    },
+    {
+      "target": "skills",
+      "suggestion": "Clarify extension-worker skill's TDD guidance: when implementing UI-heavy features, workers should identify pure utility functions (no DOM or Chrome API dependencies) within the implementation and write tests for those, even if the overall feature is UI-driven. Example: getEffectiveState() in popup.ts is a pure function that maps CheckResponse → string state label and is trivially testable.",
+      "evidence": "Feature misc-cache-flash-transition worker classified all new code as 'UI/DOM-based' and skipped testing, but getEffectiveState() at popup.ts:410 is a pure function with no browser dependencies. Reviewer confirmed it's independently testable.",
+      "isSystemic": false
+    }
+  ],
+  "rejectedObservations": [
+    {
+      "observation": "Worker's TDD deviation for refactoring (updating tests post-implementation rather than writing failing tests first) should be codified in the skill",
+      "reason": "This is case-by-case judgment that workers already exercise appropriately. Behavior-preserving refactoring naturally lends itself to updating tests after the structural change. Codifying it would over-specify the skill."
+    }
+  ],
+  "previousRound": null
+}

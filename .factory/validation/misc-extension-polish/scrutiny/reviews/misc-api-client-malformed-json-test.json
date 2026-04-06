@@ -1,0 +1,15 @@
+{
+  "featureId": "misc-api-client-malformed-json-test",
+  "reviewedAt": "2026-04-06T08:10:00.000Z",
+  "commitId": "ac4d2ab",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation adds 7 well-structured vitest tests covering all three .catch() fallback paths in the handleResponse function. Each .catch() branch (401, 403, non-ok) is exercised with multiple malformed/non-JSON response body variants: plain text, HTML, malformed JSON (Content-Type: application/json but invalid body), and empty body. Tests correctly verify the error type (AuthError, ForbiddenError, ApiError), status codes, and fallback messages. Tests follow the existing patterns in the file (mockFetch helper, try/catch with expect.unreachable, type assertions). Both checkUrl and markApplied endpoints are used across tests, providing good coverage of the shared handleResponse code path through different entry points. All verification commands (extension tests, root tests, typecheck, lint, extension build) passed.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Pass. 7 new tests comprehensively cover all three .catch() fallback paths in handleResponse for non-JSON error response bodies. Tests are correct, well-structured, follow existing patterns, and all verification commands pass. No issues found."
+}
