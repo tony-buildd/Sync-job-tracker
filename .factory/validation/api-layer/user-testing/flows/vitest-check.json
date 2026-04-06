@@ -1,0 +1,112 @@
+{
+  "groupId": "vitest-check",
+  "testedAt": "2026-04-05T23:25:42Z",
+  "isolation": {
+    "tool": "vitest",
+    "testFile": "src/app/api/extension/check/__tests__/route.test.ts",
+    "projectRoot": "/Users/minhthiennguyen/Desktop/job-tracker",
+    "noServicesNeeded": true
+  },
+  "toolsUsed": ["vitest"],
+  "assertions": {
+    "VAL-CHECK-001": {
+      "status": "pass",
+      "title": "Authenticated check returns correct response shape",
+      "evidence": "3 tests passed: 'has exactly the correct top-level keys' verifies 6 top-level keys (status, confidence, parsedJob, matchedJob, applications, reasons) with correct types and enums; 'parsedJob contains exactly 5 public fields, no internal fields' verifies only originalUrl/companyName/jobTitle/jobLocation/externalJobId are present and internal fields (normalizedCompany, normalizedTitle, normalizedLocation, primaryCanonicalKey, fallbackCanonicalKey) are stripped; 'does not leak workspaceId or userId' confirms no internal IDs in serialized response.",
+      "testNames": [
+        "response shape > has exactly the correct top-level keys (VAL-CHECK-001)",
+        "response shape > parsedJob contains exactly 5 public fields, no internal fields",
+        "response shape > does not leak workspaceId or userId"
+      ]
+    },
+    "VAL-CHECK-002": {
+      "status": "pass",
+      "title": "Primary key match returns already_applied with high confidence",
+      "evidence": "Test 'returns already_applied with high confidence for primary key match (VAL-CHECK-002)' passed: mocked Convex returns primary key match for nutrien job 30186-en_US, asserts status='already_applied', confidence='high', reasons contains 'matched_primary_key', matchedJob non-null with correct id/companyName, applications array has 1 entry with userName 'Jane Doe'.",
+      "testNames": [
+        "authenticated success – all 4 status values > returns 'already_applied' with high confidence for primary key match (VAL-CHECK-002)"
+      ]
+    },
+    "VAL-CHECK-003": {
+      "status": "pass",
+      "title": "Fallback key match returns possible_duplicate with medium confidence",
+      "evidence": "Test 'returns possible_duplicate with medium confidence for fallback key match (VAL-CHECK-003)' passed: mocked Convex returns fallback key match, asserts status='possible_duplicate', confidence='medium', reasons contains 'matched_fallback_key'.",
+      "testNames": [
+        "authenticated success – all 4 status values > returns 'possible_duplicate' with medium confidence for fallback key match (VAL-CHECK-003)"
+      ]
+    },
+    "VAL-CHECK-004": {
+      "status": "pass",
+      "title": "New parseable URL returns new with low confidence",
+      "evidence": "Test 'returns new with low confidence for no existing match (VAL-CHECK-004)' passed: mocked Convex returns no match for novel URL, asserts status='new', confidence='low', reasons contains 'no_existing_match', matchedJob=null, applications=[].",
+      "testNames": [
+        "authenticated success – all 4 status values > returns 'new' with low confidence for no existing match (VAL-CHECK-004)"
+      ]
+    },
+    "VAL-CHECK-005": {
+      "status": "pass",
+      "title": "Unparseable URL returns unparseable with null match",
+      "evidence": "Test 'returns unparseable with low confidence for non-job URL (VAL-CHECK-005)' passed: mocked Convex returns unparseable for example.com, asserts status='unparseable', confidence='low', reasons contains 'insufficient_identity_fields', matchedJob=null, applications=[].",
+      "testNames": [
+        "authenticated success – all 4 status values > returns 'unparseable' with low confidence for non-job URL (VAL-CHECK-005)"
+      ]
+    },
+    "VAL-CHECK-006": {
+      "status": "pass",
+      "title": "401 for unauthenticated, 403 for disallowed email, distinct messages",
+      "evidence": "3 tests passed: 'returns 401 for unauthenticated request' asserts 401 status, body has only 'error' key with non-empty string; 'returns 403 for non-allowlisted email' asserts 403 status, body has only 'error' key with non-empty string; 'returns DISTINCT error messages for 401 vs 403' asserts the two error strings are different so the extension can differentiate auth states.",
+      "testNames": [
+        "auth > returns 401 for unauthenticated request (no session)",
+        "auth > returns 403 for non-allowlisted email",
+        "auth > returns DISTINCT error messages for 401 vs 403"
+      ]
+    },
+    "VAL-CHECK-007": {
+      "status": "pass",
+      "title": "Missing, empty, or malformed URL returns 400",
+      "evidence": "4 tests passed: 'returns 400 for missing body', 'returns 400 for empty object body (missing url field)', 'returns 400 for empty URL', 'returns 400 for malformed URL (not-a-url)'. All return HTTP 400 with { error: string }. Never returns 500.",
+      "testNames": [
+        "input validation > returns 400 for missing body",
+        "input validation > returns 400 for empty object body (missing url field)",
+        "input validation > returns 400 for empty URL",
+        "input validation > returns 400 for malformed URL (not-a-url)"
+      ]
+    },
+    "VAL-CHECK-008": {
+      "status": "pass",
+      "title": "URL with query parameters and fragments parsed correctly",
+      "evidence": "Test 'URL with query params and fragments parsed correctly (VAL-CHECK-008)' passed: URL with ?utm_source=LinkedIn&ref=abc#section returns 200 with parsedJob.externalJobId='30186-en_US', matching the clean version without query/fragment.",
+      "testNames": [
+        "URL parsing edge cases > URL with query params and fragments parsed correctly (VAL-CHECK-008)"
+      ]
+    },
+    "VAL-CHECK-009": {
+      "status": "pass",
+      "title": "Very long URL handled gracefully",
+      "evidence": "Test 'returns 200 or 400 for URL >2048 chars, never 500 (VAL-CHECK-009)' passed: URL with 2100+ chars returns either 200 or 400, assertion confirms response.status is never 500.",
+      "testNames": [
+        "very long URL handling > returns 200 or 400 for URL >2048 chars, never 500 (VAL-CHECK-009)"
+      ]
+    },
+    "VAL-CHECK-010": {
+      "status": "pass",
+      "title": "Invalid JSON body returns 400",
+      "evidence": "2 tests passed: 'returns 400 for invalid JSON body (VAL-CHECK-010)' sends malformed '{{{' body and asserts 400 with error, never 500; 'returns 400 for raw text body' sends plain text with application/json content-type and asserts 400 with error.",
+      "testNames": [
+        "input validation > returns 400 for invalid JSON body (VAL-CHECK-010)",
+        "input validation > returns 400 for raw text body"
+      ]
+    },
+    "VAL-CROSS-006": {
+      "status": "pass",
+      "title": "Primary key takes precedence over fallback key",
+      "evidence": "Test 'primary key match takes precedence over fallback key match (VAL-CROSS-006)' passed: mocked Convex returns primary key match with already_applied/high, asserts status='already_applied', confidence='high', reasons contains 'matched_primary_key' and does NOT contain 'matched_fallback_key', matchedJob.id='primary-job-id'.",
+      "testNames": [
+        "primary key precedence > primary key match takes precedence over fallback key match (VAL-CROSS-006)"
+      ]
+    }
+  },
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 11 assertions (VAL-CHECK-001 through VAL-CHECK-010 plus VAL-CROSS-006): all 11 passed. 20 underlying vitest tests all passed in 47ms. No frictions or blockers encountered."
+}

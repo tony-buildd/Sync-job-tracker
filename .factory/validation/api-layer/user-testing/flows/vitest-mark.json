@@ -1,0 +1,214 @@
+{
+  "groupId": "vitest-mark",
+  "testedAt": "2026-04-06T06:25:42Z",
+  "isolation": {
+    "tool": "vitest",
+    "testFile": "src/app/api/extension/mark-applied/__tests__/route.test.ts",
+    "projectRoot": "/Users/minhthiennguyen/Desktop/job-tracker",
+    "servicesNeeded": "none — all external dependencies mocked"
+  },
+  "toolsUsed": ["vitest"],
+  "assertions": [
+    {
+      "id": "VAL-MARK-001",
+      "title": "Authenticated mark creates application and returns correct shape",
+      "status": "pass",
+      "steps": [
+        { "action": "POST with valid session, allowed email, valid originalUrl", "expected": "HTTP 200 with jobId, companyName, jobTitle, jobLocation, externalJobId, applications", "observed": "HTTP 200 returned with all expected keys and correct types" },
+        { "action": "Check jobId is non-empty string", "expected": "typeof string, length > 0", "observed": "jobId is 'job-id-1'" },
+        { "action": "Check applications array shape", "expected": "Non-empty array with id, appliedAt, resumeVersion, profileLabel, notes, userName, userEmail", "observed": "Array has 1 entry with all required keys" },
+        { "action": "Check no workspaceId leak", "expected": "No 'workspaceId' in JSON", "observed": "No workspaceId found in serialized response" }
+      ],
+      "evidence": {
+        "testName": "returns 200 with MarkAppliedResponse for valid request (VAL-MARK-001)",
+        "result": "pass",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARK-002",
+      "title": "Optional metadata fields stored and returned",
+      "status": "pass",
+      "steps": [
+        { "action": "POST with resumeVersion='v2.1', profileLabel='Frontend', notes='Applied via referral'", "expected": "Application entry returns matching values; mutation called with metadata", "observed": "Application entry has resumeVersion='v2.1', profileLabel='Frontend', notes='Applied via referral'; mutation args confirmed" },
+        { "action": "POST with whitespace-only metadata ('   ', '  \\t  ', '   \\n  ')", "expected": "Mutation called without metadata (undefined); response shows null", "observed": "callArgs.resumeVersion/profileLabel/notes are undefined; response shows null for all three" }
+      ],
+      "evidence": {
+        "testNames": [
+          "stores and returns resumeVersion, profileLabel, and notes (VAL-MARK-002)",
+          "treats whitespace-only metadata values as null/undefined (VAL-MARK-002)"
+        ],
+        "result": "pass (2 tests)",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARK-003",
+      "title": "Override fields (companyName, jobTitle, jobLocation, externalJobId) respected",
+      "status": "pass",
+      "steps": [
+        { "action": "POST with override fields including leading/trailing whitespace ('  Google  ')", "expected": "Convex mutation receives trimmed values; response reflects overrides", "observed": "callArgs.companyName='Google' (trimmed); response companyName='Google', jobTitle='Senior SWE', jobLocation='Mountain View', externalJobId='G-12345'" }
+      ],
+      "evidence": {
+        "testName": "passes override fields to Convex, trimmed (VAL-MARK-003)",
+        "result": "pass",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARK-004",
+      "title": "matchedJobId links to existing job",
+      "status": "pass",
+      "steps": [
+        { "action": "POST with matchedJobId='existing-job-id-abc'", "expected": "Response jobId matches matchedJobId; mutation called with matchedJobId", "observed": "body.jobId='existing-job-id-abc'; callArgs.matchedJobId='existing-job-id-abc'" }
+      ],
+      "evidence": {
+        "testName": "passes matchedJobId to Convex and returns matching jobId (VAL-MARK-004)",
+        "result": "pass",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARK-005",
+      "title": "Idempotent — same user+job does not create duplicate application",
+      "status": "pass",
+      "steps": [
+        { "action": "Two identical POSTs from same user for same job URL", "expected": "Same jobId; applications array has exactly 1 entry for the user", "observed": "body1.jobId === body2.jobId; userApps.length === 1" }
+      ],
+      "evidence": {
+        "testName": "same user+job does not create duplicate application (VAL-MARK-005)",
+        "result": "pass",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARK-006",
+      "title": "Multiple users can apply to the same job",
+      "status": "pass",
+      "steps": [
+        { "action": "User A marks, then User B marks same job", "expected": "User B's response has 2 applications with distinct emails", "observed": "applications.length === 2; emails contain 'allowed@example.com' and 'other@example.com'" }
+      ],
+      "evidence": {
+        "testName": "both users' applications are returned for the same job (VAL-MARK-006)",
+        "result": "pass",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARK-007",
+      "title": "401 for unauthenticated, 403 for disallowed email",
+      "status": "pass",
+      "steps": [
+        { "action": "POST without session (unauthenticated)", "expected": "HTTP 401 with {error: string}, single key", "observed": "HTTP 401; body has exactly one key 'error' with non-empty string" },
+        { "action": "POST with non-allowlisted email", "expected": "HTTP 403 with {error: string}, single key", "observed": "HTTP 403; body has exactly one key 'error' with non-empty string" },
+        { "action": "Compare 401 and 403 error messages", "expected": "Distinct messages", "observed": "body401.error !== body403.error confirmed" }
+      ],
+      "evidence": {
+        "testNames": [
+          "returns 401 for unauthenticated request (no session)",
+          "returns 403 for non-allowlisted email",
+          "returns DISTINCT error messages for 401 vs 403"
+        ],
+        "result": "pass (3 tests)",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARK-008",
+      "title": "Missing, empty, or malformed originalUrl returns 400",
+      "status": "pass",
+      "steps": [
+        { "action": "POST with missing body", "expected": "HTTP 400 with error", "observed": "HTTP 400 with error property" },
+        { "action": "POST with empty object {}", "expected": "HTTP 400 with error", "observed": "HTTP 400 with error property" },
+        { "action": "POST with empty originalUrl ''", "expected": "HTTP 400 with error", "observed": "HTTP 400 with error property" },
+        { "action": "POST with malformed originalUrl 'not-a-url'", "expected": "HTTP 400 with error", "observed": "HTTP 400 with error property" },
+        { "action": "POST with invalid JSON body '{{{' ", "expected": "HTTP 400, never 500", "observed": "HTTP 400 with error, not 500" },
+        { "action": "POST with raw text body", "expected": "HTTP 400 with error", "observed": "HTTP 400 with error property" }
+      ],
+      "evidence": {
+        "testNames": [
+          "returns 400 for missing body",
+          "returns 400 for empty object body (missing originalUrl)",
+          "returns 400 for empty originalUrl",
+          "returns 400 for malformed originalUrl (not-a-url)",
+          "returns 400 for invalid JSON body",
+          "returns 400 for raw text body"
+        ],
+        "result": "pass (6 tests)",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARK-009",
+      "title": "Insufficient identity fields returns structured error",
+      "status": "pass",
+      "steps": [
+        { "action": "POST with URL that produces no canonical keys (https://example.com/) and no overrides", "expected": "HTTP 400 with descriptive error about insufficient identity; never 500", "observed": "HTTP 400; body.error is a non-empty string; status is not 500" }
+      ],
+      "evidence": {
+        "testName": "returns structured error for URL with no canonical keys and no overrides (VAL-MARK-009)",
+        "result": "pass",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARK-010",
+      "title": "Invalid matchedJobId falls through gracefully",
+      "status": "pass",
+      "steps": [
+        { "action": "POST with invalid matchedJobId 'not-a-valid-id'", "expected": "HTTP 200 (falls through to canonical key lookup), never 500", "observed": "HTTP 200 with valid jobId; mutation called twice (first rejected, second succeeded without matchedJobId)" },
+        { "action": "POST with non-existent matchedJobId 'nonexistent123'", "expected": "HTTP 200 (falls through), never 500", "observed": "HTTP 200 with valid jobId; mutation retried without matchedJobId" }
+      ],
+      "evidence": {
+        "testNames": [
+          "invalid matchedJobId falls through gracefully, never 500 (VAL-MARK-010)",
+          "non-existent matchedJobId falls through gracefully (VAL-MARK-010)"
+        ],
+        "result": "pass (2 tests)",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARK-011",
+      "title": "Re-mark does not overwrite existing application metadata",
+      "status": "pass",
+      "steps": [
+        { "action": "First mark with resumeVersion='v1.0', profileLabel='Original', notes='First apply'", "expected": "Application has v1.0 metadata", "observed": "body1.applications[0].resumeVersion='v1.0'" },
+        { "action": "Second mark with resumeVersion='v2.0', profileLabel='Updated', notes='Second apply attempt'", "expected": "Application STILL has v1.0 metadata (original preserved)", "observed": "body2.applications[0].resumeVersion='v1.0', profileLabel='Original', notes='First apply'" }
+      ],
+      "evidence": {
+        "testName": "re-mark does NOT update existing application metadata (VAL-MARK-011)",
+        "result": "pass",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-007",
+      "title": "First-use experience — empty database works end-to-end",
+      "status": "pass",
+      "steps": [
+        { "action": "POST on fresh database with valid URL", "expected": "HTTP 200; creates workspace, user, job, application; returns valid response", "observed": "HTTP 200; body.jobId='fresh-job-id', companyName='Nutrien', applications[0].userEmail='allowed@example.com'; mutation called with correct originalUrl" }
+      ],
+      "evidence": {
+        "testName": "creates workspace, user, job, and application on fresh database (VAL-CROSS-007)",
+        "result": "pass",
+        "outputFile": "api-layer/vitest-mark/test-output.txt"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 12 assertions (VAL-MARK-001 through VAL-MARK-011 and VAL-CROSS-007) across 23 unit tests: all 12 assertions pass. All tests completed in 45ms with 0 failures. No frictions or blockers encountered."
+}

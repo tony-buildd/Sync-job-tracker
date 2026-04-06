@@ -1,0 +1,134 @@
+{
+  "groupId": "vitest-fallback",
+  "testedAt": "2026-04-05T23:25:39Z",
+  "isolation": {
+    "tool": "vitest",
+    "testFile": "src/app/extension/check/__tests__/page.test.ts",
+    "projectRoot": "/Users/minhthiennguyen/Desktop/job-tracker",
+    "note": "No services needed — tests mock Clerk auth (currentUser)"
+  },
+  "toolsUsed": ["vitest"],
+  "assertions": [
+    {
+      "id": "VAL-FALLBACK-001",
+      "title": "Page loads, URL param pre-fills input, auto-runs check",
+      "status": "blocked",
+      "steps": [
+        { "action": "Run vitest test: renders main layout with ExtensionJobChecker", "expected": "ExtensionJobChecker rendered for allowlisted user", "observed": "PASS — ExtensionJobChecker found in tree" },
+        { "action": "Run vitest test: passes prefillUrl to ExtensionJobChecker", "expected": "prefillUrl prop matches URL param", "observed": "PASS — prefillUrl === 'https://jobs.example.com/posting/123'" },
+        { "action": "Run vitest test: passes viewerEmail to ExtensionJobChecker", "expected": "viewerEmail prop set correctly", "observed": "PASS — viewerEmail === 'allowed@example.com'" },
+        { "action": "Run vitest test: passes viewer name from user firstName", "expected": "viewerName prop set from firstName", "observed": "PASS — viewerName === 'Alice'" },
+        { "action": "Verify auto-run check behavior (client-side)", "expected": "Check auto-triggers on page load", "observed": "CANNOT VERIFY — auto-run is client-side behavior in ExtensionJobChecker component, not testable via server-side vitest" }
+      ],
+      "evidence": {
+        "vitestOutput": "api-layer/vitest-fallback/vitest-output.txt",
+        "testResults": "22/22 passed — server rendering tests confirm prefillUrl, viewerEmail, viewerName props passed correctly to ExtensionJobChecker",
+        "consoleErrors": "N/A (vitest, not browser)",
+        "network": "N/A (mocked)"
+      },
+      "issues": "Server-side rendering of props is fully validated (prefillUrl, viewerEmail, viewerName). However, the auto-run check behavior is a client-side feature of ExtensionJobChecker which cannot be tested via vitest server component tests. Browser testing (agent-browser) is blocked due to Clerk middleware error."
+    },
+    {
+      "id": "VAL-FALLBACK-002",
+      "title": "Signed-out user sees sign-in prompt",
+      "status": "pass",
+      "steps": [
+        { "action": "Run vitest test: renders SignInPrompt when user is not authenticated", "expected": "SignInPrompt component rendered", "observed": "PASS — getElementTypeName(tree) === 'SignInPrompt'" },
+        { "action": "Run vitest test: passes URL to SignInPrompt for redirect preservation", "expected": "url prop passed for redirect", "observed": "PASS — tree.props.url === 'https://jobs.example.com/posting/123'" },
+        { "action": "Run vitest test: renders SignInPrompt without URL when param is missing", "expected": "SignInPrompt rendered, url undefined", "observed": "PASS — SignInPrompt rendered, url is undefined" },
+        { "action": "Run vitest test: does not render ExtensionJobChecker for signed-out users", "expected": "No ExtensionJobChecker in tree", "observed": "PASS — findChildByType returns null" }
+      ],
+      "evidence": {
+        "vitestOutput": "api-layer/vitest-fallback/vitest-output.txt",
+        "testResults": "4/4 signed-out tests passed — SignInPrompt rendered instead of ExtensionJobChecker when currentUser() returns null",
+        "consoleErrors": "N/A (vitest, not browser)",
+        "network": "N/A (mocked)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-FALLBACK-003",
+      "title": "Displays match status, parsed job info, and application history",
+      "status": "blocked",
+      "steps": [
+        { "action": "Run vitest test: renders main layout with ExtensionJobChecker", "expected": "ExtensionJobChecker receives correct props", "observed": "PASS — component receives prefillUrl, viewerEmail, viewerName" },
+        { "action": "Verify match status display, parsed job info, application history", "expected": "Status badge, parsed fields, application entries visible", "observed": "CANNOT VERIFY — these are client-side rendering concerns within ExtensionJobChecker component" }
+      ],
+      "evidence": {
+        "vitestOutput": "api-layer/vitest-fallback/vitest-output.txt",
+        "testResults": "Server-side tests confirm ExtensionJobChecker is rendered with correct props, but the component's internal rendering (status, parsed info, history) is client-side only",
+        "consoleErrors": "N/A (vitest, not browser)",
+        "network": "N/A (mocked)"
+      },
+      "issues": "Match status display, parsed job info, and application history are client-side rendering concerns within ExtensionJobChecker. Vitest server component tests only verify the component is mounted with correct props. Browser testing (agent-browser) blocked due to Clerk middleware error."
+    },
+    {
+      "id": "VAL-FALLBACK-004",
+      "title": "Mark-applied action available from fallback page",
+      "status": "blocked",
+      "steps": [
+        { "action": "Run vitest test: renders main layout with ExtensionJobChecker", "expected": "ExtensionJobChecker rendered for allowlisted user", "observed": "PASS — component rendered" },
+        { "action": "Verify mark-applied button/action presence", "expected": "Mark as Applied control present and interactable", "observed": "CANNOT VERIFY — mark-applied action is client-side UI within ExtensionJobChecker" }
+      ],
+      "evidence": {
+        "vitestOutput": "api-layer/vitest-fallback/vitest-output.txt",
+        "testResults": "Server-side tests confirm ExtensionJobChecker is rendered (which should contain the mark-applied UI), but cannot verify the button exists or is interactable",
+        "consoleErrors": "N/A (vitest, not browser)",
+        "network": "N/A (mocked)"
+      },
+      "issues": "Mark-applied action is a client-side interactive element within ExtensionJobChecker. Vitest server component tests cannot verify button presence or interactability. Browser testing (agent-browser) blocked due to Clerk middleware error."
+    },
+    {
+      "id": "VAL-FALLBACK-005",
+      "title": "After sign-in redirect, URL parameter is preserved",
+      "status": "pass",
+      "steps": [
+        { "action": "Run vitest test: passes URL to SignInPrompt for redirect preservation", "expected": "SignInPrompt receives url prop for redirect", "observed": "PASS — tree.props.url === 'https://jobs.example.com/posting/123'" },
+        { "action": "Run vitest test: preserves complex URLs with query params and fragments", "expected": "Complex URL preserved through server rendering", "observed": "PASS — prefillUrl === 'https://jobs.nutrien.com/North-America/job/30186-en_US/?utm_source=LinkedIn&ref=abc#section'" },
+        { "action": "Run vitest test: preserves URLs with encoded characters", "expected": "Encoded URL preserved", "observed": "PASS — prefillUrl === 'https://jobs.example.com/posting/123?q=hello%20world&lang=en'" }
+      ],
+      "evidence": {
+        "vitestOutput": "api-layer/vitest-fallback/vitest-output.txt",
+        "testResults": "3 tests confirm URL preservation mechanism: SignInPrompt receives url for redirect, complex URLs with query params/fragments preserved, encoded characters preserved through round-trip",
+        "consoleErrors": "N/A (vitest, not browser)",
+        "network": "N/A (mocked)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-FALLBACK-006",
+      "title": "Missing or invalid URL parameter handled gracefully",
+      "status": "pass",
+      "steps": [
+        { "action": "Run vitest test: renders without crash when URL parameter is missing", "expected": "Page renders, prefillUrl undefined", "observed": "PASS — ExtensionJobChecker rendered, prefillUrl undefined" },
+        { "action": "Run vitest test: renders without crash when URL is not-a-url", "expected": "Invalid URL treated gracefully", "observed": "PASS — prefillUrl undefined (invalid URL filtered out)" },
+        { "action": "Run vitest test: renders without crash when URL parameter is empty string", "expected": "Empty string treated gracefully", "observed": "PASS — prefillUrl undefined" },
+        { "action": "Run vitest test: renders without crash when URL parameter is an array", "expected": "Array param handled gracefully", "observed": "PASS — prefillUrl undefined (non-string filtered out)" },
+        { "action": "Run vitest test: does not crash on completely missing searchParams keys", "expected": "No crash, page renders", "observed": "PASS — tree is truthy, ExtensionJobChecker rendered" }
+      ],
+      "evidence": {
+        "vitestOutput": "api-layer/vitest-fallback/vitest-output.txt",
+        "testResults": "5/5 edge case tests passed — missing, invalid, empty, array, and absent URL params all handled gracefully without crashes",
+        "consoleErrors": "N/A (vitest, not browser)",
+        "network": "N/A (mocked)"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Clerk middleware error ('clerkMiddleware() was not run') prevents dev server page rendering, blocking agent-browser testing. Middleware at ./middleware.ts but Clerk expects ./src/middleware.ts. Cannot modify middleware.ts per AGENTS.md boundaries.",
+      "resolved": false,
+      "resolution": "Fell back to vitest server component tests which mock Clerk auth, covering server-side rendering logic",
+      "affectedAssertions": ["VAL-FALLBACK-001", "VAL-FALLBACK-002", "VAL-FALLBACK-003", "VAL-FALLBACK-004", "VAL-FALLBACK-005", "VAL-FALLBACK-006"]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Dev server returns 500 on /extension/check due to Clerk clerkMiddleware() not running. Middleware at ./middleware.ts but Clerk expects ./src/middleware.ts. Cannot modify middleware.ts per AGENTS.md boundaries. This prevents all browser-based (agent-browser) testing of the fallback page.",
+      "affectedAssertions": ["VAL-FALLBACK-001", "VAL-FALLBACK-003", "VAL-FALLBACK-004"],
+      "quickFixAttempted": "Used vitest with mocked Clerk auth as fallback testing tool. Server-side rendering logic fully covered; client-side behavior (auto-check, match display, mark-applied button) cannot be validated without browser."
+    }
+  ],
+  "summary": "Tested 6 assertions via vitest (fallback from blocked agent-browser): 3 passed (VAL-FALLBACK-002, VAL-FALLBACK-005, VAL-FALLBACK-006), 3 blocked (VAL-FALLBACK-001, VAL-FALLBACK-003, VAL-FALLBACK-004 — require client-side browser interaction). All 22 vitest tests passed (22/22). Server-side rendering logic is fully validated: auth gating, URL parameter handling, prop passing, graceful error handling."
+}
