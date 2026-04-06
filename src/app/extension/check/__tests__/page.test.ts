@@ -9,11 +9,10 @@ vi.mock("@clerk/nextjs/server", () => ({
   currentUser: () => mockCurrentUser(),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  SignInButton: ({ children, forceRedirectUrl }: { children: unknown; forceRedirectUrl?: string }) => ({
-    $$type: "SignInButton",
-    forceRedirectUrl,
-    children,
+vi.mock("../sign-in-prompt-button", () => ({
+  SignInPromptButton: ({ redirectUrl }: { redirectUrl: string }) => ({
+    $$type: "SignInPromptButton",
+    redirectUrl,
   }),
 }));
 

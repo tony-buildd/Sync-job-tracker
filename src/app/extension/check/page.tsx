@@ -1,8 +1,8 @@
-import { SignInButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { ExtensionJobChecker } from "@/components/extension-job-checker";
 import { isAllowedEmail } from "../../../../shared/access";
+import { SignInPromptButton } from "./sign-in-prompt-button";
 
 function SignInPrompt({ url }: { url?: string }) {
   const redirectUrl = url
@@ -21,11 +21,7 @@ function SignInPrompt({ url }: { url?: string }) {
           applied.
         </p>
         <div className="mt-8">
-          <SignInButton mode="modal" forceRedirectUrl={redirectUrl}>
-            <button className="inline-flex h-13 items-center justify-center rounded-2xl bg-[var(--accent)] px-6 text-sm font-semibold text-slate-950 transition hover:brightness-110">
-              Sign in with Google
-            </button>
-          </SignInButton>
+          <SignInPromptButton redirectUrl={redirectUrl} />
         </div>
       </section>
     </main>
