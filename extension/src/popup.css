@@ -12,13 +12,15 @@ body {
   font-size: 14px;
   color: #1a1a2e;
   background: #ffffff;
-  width: 360px;
+  width: 400px;
   min-height: 120px;
 }
 
 .popup-container {
   padding: 16px;
 }
+
+/* ------------------------------------------------------------------ Header */
 
 .popup-header {
   display: flex;
@@ -35,55 +37,344 @@ body {
   color: #1a1a2e;
 }
 
-.status {
-  font-size: 12px;
+.badge {
+  font-size: 11px;
   padding: 2px 8px;
   border-radius: 12px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
-.status.loading {
-  background: #fef3c7;
-  color: #92400e;
-}
+.badge-loading { background: #fef3c7; color: #92400e; }
+.badge-new     { background: #dbeafe; color: #1e40af; }
+.badge-applied { background: #d1fae5; color: #065f46; }
+.badge-duplicate { background: #fef3c7; color: #92400e; }
+.badge-manual  { background: #fef3c7; color: #92400e; }
+.badge-error   { background: #fee2e2; color: #991b1b; }
+.badge-neutral { background: #f3f4f6; color: #6b7280; }
 
-.status.ready {
-  background: #d1fae5;
-  color: #065f46;
-}
+/* ------------------------------------------------------------- URL bar */
 
-.status.unavailable {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.popup-body {
+.url-bar {
   margin-bottom: 12px;
 }
 
 .url-label {
-  font-size: 12px;
+  font-size: 11px;
   color: #6b7280;
-  margin-bottom: 4px;
+  display: block;
+  margin-bottom: 2px;
 }
 
 .url-value {
-  font-size: 13px;
+  font-size: 12px;
   color: #374151;
-  word-break: break-all;
-  line-height: 1.4;
-  max-height: 60px;
+  display: block;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.4;
 }
 
-.popup-footer {
-  padding-top: 8px;
+/* ------------------------------------------------------------- States */
+
+.state { }
+
+.hidden {
+  display: none !important;
+}
+
+/* ------------------------------------------------------------- Spinner */
+
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner-text {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* ------------------------------------------------------------- Job card */
+
+.job-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 8px;
+}
+
+.job-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.job-card-applied { border-color: #a7f3d0; background: #f0fdf4; }
+.job-card-duplicate { border-color: #fde68a; background: #fffbeb; }
+.job-card-manual { border-color: #fde68a; background: #fffbeb; }
+
+.job-details {
+  margin-bottom: 12px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.detail-label {
+  font-size: 11px;
+  color: #6b7280;
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.detail-value {
+  font-size: 13px;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------- Applied badge */
+
+.applied-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #065f46;
+  background: #d1fae5;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+/* ------------------------------------------------------------- Application history */
+
+.application-history {
+  margin-top: 8px;
+}
+
+.app-entry {
+  font-size: 12px;
+  color: #4b5563;
+  padding: 6px 0;
   border-top: 1px solid #e5e7eb;
 }
 
-.footer-text {
-  font-size: 11px;
-  color: #9ca3af;
+.app-entry-user {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.app-entry-date {
+  color: #6b7280;
+  margin-left: 6px;
+}
+
+/* ------------------------------------------------------------- Duplicate warning */
+
+.duplicate-warning {
+  font-size: 13px;
+  color: #92400e;
+  margin-bottom: 10px;
+}
+
+/* ------------------------------------------------------------- Manual info */
+
+.manual-info {
+  font-size: 13px;
+  color: #92400e;
+  margin-bottom: 12px;
+}
+
+.manual-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.correction-heading {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+/* ------------------------------------------------------------- Buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: #ffffff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btn-warning {
+  background: #f59e0b;
+  color: #ffffff;
+}
+.btn-warning:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+/* ------------------------------------------------------------- Inline messages */
+
+.inline-error {
+  font-size: 12px;
+  color: #dc2626;
+  margin-top: 6px;
+}
+
+.inline-success {
+  font-size: 12px;
+  color: #059669;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------- Message cards */
+
+.message-card {
   text-align: center;
+  padding: 20px 10px;
+}
+
+.message-card-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.neutral-message {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.error-message {
+  font-size: 14px;
+  font-weight: 600;
+  color: #dc2626;
+  margin-bottom: 6px;
+}
+
+.error-detail {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+/* ------------------------------------------------------------- Forms / optional */
+
+.optional-section {
+  margin-top: 10px;
+}
+
+.optional-toggle {
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  user-select: none;
+}
+
+.optional-toggle:hover {
+  color: #374151;
+}
+
+.optional-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.form-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  color: #6b7280;
+  gap: 2px;
+}
+
+.form-input {
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  outline: none;
+  color: #1f2937;
+  font-family: inherit;
+}
+
+.form-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 40px;
+}
+
+.required {
+  color: #dc2626;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 4px 0;
 }

@@ -10,17 +10,227 @@
   <div class="popup-container">
     <header class="popup-header">
       <h1>Sync Job Tracker</h1>
-      <span id="status" class="status loading">Loading…</span>
+      <span id="status-badge" class="badge badge-loading">Loading…</span>
     </header>
 
-    <main class="popup-body">
-      <p class="url-label">Current page:</p>
-      <p id="current-url" class="url-value">Reading…</p>
-    </main>
+    <!-- Current URL display -->
+    <div class="url-bar">
+      <span class="url-label">Current page:</span>
+      <span id="current-url" class="url-value">Reading…</span>
+    </div>
 
-    <footer class="popup-footer">
-      <p class="footer-text">V1 — Full popup coming soon</p>
-    </footer>
+    <!-- LOADING state -->
+    <section id="state-loading" class="state">
+      <div class="spinner-container">
+        <div class="spinner"></div>
+        <p class="spinner-text">Checking job status…</p>
+      </div>
+    </section>
+
+    <!-- NEW JOB state -->
+    <section id="state-new" class="state hidden">
+      <div class="job-card">
+        <h2 class="job-card-title">New Job Found</h2>
+        <div class="job-details">
+          <div class="detail-row">
+            <span class="detail-label">Company</span>
+            <span id="new-company" class="detail-value">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Title</span>
+            <span id="new-title" class="detail-value">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Location</span>
+            <span id="new-location" class="detail-value">—</span>
+          </div>
+        </div>
+
+        <button id="btn-mark-applied" class="btn btn-primary">Mark as Applied</button>
+        <p id="mark-error" class="inline-error hidden"></p>
+        <p id="mark-success" class="inline-success hidden">✓ Marked as Applied</p>
+
+        <!-- Expandable optional fields -->
+        <details id="optional-fields" class="optional-section">
+          <summary class="optional-toggle">Optional details</summary>
+          <div class="optional-form">
+            <label class="form-label">
+              Resume Version
+              <input type="text" id="opt-resume" class="form-input" placeholder="e.g., v2.1" />
+            </label>
+            <label class="form-label">
+              Profile Label
+              <input type="text" id="opt-profile" class="form-input" placeholder="e.g., Frontend" />
+            </label>
+            <label class="form-label">
+              Notes
+              <textarea id="opt-notes" class="form-input form-textarea" rows="2" placeholder="Any notes…"></textarea>
+            </label>
+            <hr class="divider" />
+            <p class="correction-heading">Manual corrections</p>
+            <label class="form-label">
+              Company
+              <input type="text" id="opt-company" class="form-input" />
+            </label>
+            <label class="form-label">
+              Job Title
+              <input type="text" id="opt-title" class="form-input" />
+            </label>
+            <label class="form-label">
+              Location
+              <input type="text" id="opt-location" class="form-input" />
+            </label>
+            <label class="form-label">
+              Job ID
+              <input type="text" id="opt-job-id" class="form-input" />
+            </label>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ALREADY APPLIED state -->
+    <section id="state-applied" class="state hidden">
+      <div class="job-card job-card-applied">
+        <h2 class="job-card-title">Already Applied</h2>
+        <span class="applied-badge">✓ Applied</span>
+        <div class="job-details">
+          <div class="detail-row">
+            <span class="detail-label">Company</span>
+            <span id="applied-company" class="detail-value">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Title</span>
+            <span id="applied-title" class="detail-value">—</span>
+          </div>
+        </div>
+        <div id="applied-history" class="application-history"></div>
+      </div>
+    </section>
+
+    <!-- POSSIBLE DUPLICATE state -->
+    <section id="state-duplicate" class="state hidden">
+      <div class="job-card job-card-duplicate">
+        <h2 class="job-card-title">Possible Duplicate</h2>
+        <p class="duplicate-warning">⚠ This may match an existing application.</p>
+        <div class="job-details">
+          <div class="detail-row">
+            <span class="detail-label">Matched Company</span>
+            <span id="dup-company" class="detail-value">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Matched Title</span>
+            <span id="dup-title" class="detail-value">—</span>
+          </div>
+        </div>
+        <button id="btn-mark-anyway" class="btn btn-warning">Mark Anyway</button>
+        <p id="dup-mark-error" class="inline-error hidden"></p>
+        <p id="dup-mark-success" class="inline-success hidden">✓ Marked as Applied</p>
+
+        <!-- Same optional fields for duplicate -->
+        <details id="dup-optional-fields" class="optional-section">
+          <summary class="optional-toggle">Optional details</summary>
+          <div class="optional-form">
+            <label class="form-label">
+              Resume Version
+              <input type="text" id="dup-opt-resume" class="form-input" placeholder="e.g., v2.1" />
+            </label>
+            <label class="form-label">
+              Profile Label
+              <input type="text" id="dup-opt-profile" class="form-input" placeholder="e.g., Frontend" />
+            </label>
+            <label class="form-label">
+              Notes
+              <textarea id="dup-opt-notes" class="form-input form-textarea" rows="2" placeholder="Any notes…"></textarea>
+            </label>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- NEEDS MANUAL DETAILS state -->
+    <section id="state-manual" class="state hidden">
+      <div class="job-card job-card-manual">
+        <h2 class="job-card-title">Needs More Details</h2>
+        <p class="manual-info">We couldn't fully parse this job. Please fill in the required fields.</p>
+        <div class="manual-form">
+          <label class="form-label">
+            Company <span class="required">*</span>
+            <input type="text" id="manual-company" class="form-input" />
+          </label>
+          <label class="form-label">
+            Job Title
+            <input type="text" id="manual-title" class="form-input" />
+          </label>
+          <label class="form-label">
+            Location
+            <input type="text" id="manual-location" class="form-input" />
+          </label>
+          <label class="form-label">
+            Job ID
+            <input type="text" id="manual-job-id" class="form-input" />
+          </label>
+          <p id="manual-validation-error" class="inline-error hidden">
+            Company is required, plus either a Job ID or both Title and Location.
+          </p>
+          <label class="form-label">
+            Resume Version
+            <input type="text" id="manual-resume" class="form-input" placeholder="e.g., v2.1" />
+          </label>
+          <label class="form-label">
+            Profile Label
+            <input type="text" id="manual-profile" class="form-input" placeholder="e.g., Frontend" />
+          </label>
+          <label class="form-label">
+            Notes
+            <textarea id="manual-notes" class="form-input form-textarea" rows="2" placeholder="Any notes…"></textarea>
+          </label>
+          <button id="btn-manual-submit" class="btn btn-primary">Mark as Applied</button>
+          <p id="manual-mark-error" class="inline-error hidden"></p>
+          <p id="manual-mark-success" class="inline-success hidden">✓ Marked as Applied</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- UNPARSEABLE / NON-JOB state -->
+    <section id="state-unparseable" class="state hidden">
+      <div class="message-card">
+        <p class="neutral-message">This page doesn't appear to be a job posting.</p>
+      </div>
+    </section>
+
+    <!-- UNSUPPORTED URL state (chrome://, about:, file://) -->
+    <section id="state-unsupported" class="state hidden">
+      <div class="message-card">
+        <p class="neutral-message">This page type is not supported for job checking.</p>
+      </div>
+    </section>
+
+    <!-- AUTH FAILURE 401 state -->
+    <section id="state-auth-401" class="state hidden">
+      <div class="message-card message-card-error">
+        <p class="error-message">Sign in to continue</p>
+        <p class="error-detail">You need to be signed into the Sync Job Tracker app.</p>
+        <button id="btn-open-app" class="btn btn-secondary">Open in App</button>
+      </div>
+    </section>
+
+    <!-- AUTH FAILURE 403 state -->
+    <section id="state-auth-403" class="state hidden">
+      <div class="message-card message-card-error">
+        <p class="error-message">Not authorized</p>
+        <p class="error-detail">Your account does not have access to this feature.</p>
+      </div>
+    </section>
+
+    <!-- NETWORK ERROR state -->
+    <section id="state-network-error" class="state hidden">
+      <div class="message-card message-card-error">
+        <p class="error-message">Unable to connect</p>
+        <p class="error-detail" id="network-error-detail">Check that the Sync Job Tracker app is running.</p>
+        <button id="btn-retry" class="btn btn-secondary">Retry</button>
+      </div>
+    </section>
   </div>
 
   <script src="popup.js" type="module"></script>
