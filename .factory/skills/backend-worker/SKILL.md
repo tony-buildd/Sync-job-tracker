@@ -31,7 +31,7 @@ Key patterns to follow:
 - Convex server calls: use `ConvexHttpClient` from `convex/browser` with the JWT token
 - Shared logic: pure functions in `shared/` (parseJobUrl, deriveCanonicalIdentity, isAllowedEmail)
 - Input validation: use Zod schemas
-- Error responses: return JSON with `{ error: string, code: string }` shape
+- Error responses: return JSON with `{ error: string }` shape (single key, no code field)
 
 ### 2. Write Tests First (TDD)
 
