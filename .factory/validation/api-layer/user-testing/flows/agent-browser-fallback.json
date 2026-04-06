@@ -1,0 +1,81 @@
+{
+  "groupId": "agent-browser-fallback",
+  "testedAt": "2026-04-06T06:45:00.000Z",
+  "isolation": {
+    "appUrl": "http://localhost:3000",
+    "fallbackPage": "http://localhost:3000/extension/check",
+    "testUrl": "http://localhost:3000/extension/check?url=https%3A%2F%2Fjobs.nutrien.com%2FNutrien%2Fjob%2FLoveland-CO%2F30186-en_US",
+    "sessionId": "3140208f94af"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-FALLBACK-001",
+      "title": "Page loads, URL param pre-fills input, auto-runs check",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to /extension/check?url=https%3A%2F%2Fjobs.nutrien.com%2FNutrien%2Fjob%2FLoveland-CO%2F30186-en_US", "expected": "Page loads (200)", "observed": "Page loaded successfully (200) but shows sign-in prompt for unauthenticated user" },
+        { "action": "Click 'Sign in with Google' button", "expected": "Clerk sign-in modal appears", "observed": "Clerk development mode sign-in modal appeared with email/password fields and 'Continue with Google' button" },
+        { "action": "Click 'Sign up' link to create test account", "expected": "Sign-up form displayed", "observed": "Sign-up form displayed with email, password fields" },
+        { "action": "Fill email (minh@example.com) and password, click Continue", "expected": "Account created, redirected to fallback page with auth", "observed": "Cloudflare Turnstile CAPTCHA appeared and hung (error 300030). Sign-up request failed with 400 status." },
+        { "action": "Try sign-in with same credentials", "expected": "Sign-in successful", "observed": "Clerk returned 'Couldn't find your account' - no existing test user in development instance" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "api-layer/agent-browser-fallback/initial-page-load.png",
+          "api-layer/agent-browser-fallback/signup-form.png",
+          "api-layer/agent-browser-fallback/signup-loading.png",
+          "api-layer/agent-browser-fallback/signin-attempt-result.png"
+        ],
+        "consoleErrors": "Cloudflare Turnstile Error 300030; Turnstile Widget hung; Clerk sign-up request failed 400; 'Couldn't find your account' on sign-in attempt",
+        "network": "POST /client/sign_ups -> 400 (CAPTCHA not passed)"
+      },
+      "issues": "Cannot authenticate via agent-browser: Cloudflare Turnstile CAPTCHA blocks automated sign-up in Clerk keyless/development mode, and no pre-existing test user account exists for sign-in. URL parameter IS preserved in address bar (verified: http://localhost:3000/extension/check?url=https%3A%2F%2Fjobs.nutrien.com%2FNutrien%2Fjob%2FLoveland-CO%2F30186-en_US). Page correctly shows sign-in prompt for unauthenticated users. Cannot verify URL pre-fill in input, auto-check behavior, or results display without authenticated session."
+    },
+    {
+      "id": "VAL-FALLBACK-003",
+      "title": "Displays match status, parsed job info, and application history",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to fallback page with URL param", "expected": "Page loads", "observed": "Page loaded but requires authentication" },
+        { "action": "Attempt authentication via Clerk development mode", "expected": "Sign-in successful, check results visible", "observed": "Authentication blocked by Cloudflare Turnstile CAPTCHA. Cannot reach authenticated state to verify check results." }
+      ],
+      "evidence": {
+        "screenshots": [
+          "api-layer/agent-browser-fallback/initial-page-load.png",
+          "api-layer/agent-browser-fallback/signin-attempt-result.png"
+        ],
+        "consoleErrors": "Same as VAL-FALLBACK-001 - Turnstile CAPTCHA blocking auth",
+        "network": "N/A - could not authenticate"
+      },
+      "issues": "Blocked by same authentication issue as VAL-FALLBACK-001. Cannot verify status badge, parsed fields, or application entries without completing sign-in. The ExtensionJobChecker component (which renders these elements) is only rendered for authenticated, allowlisted users (verified via page source code review)."
+    },
+    {
+      "id": "VAL-FALLBACK-004",
+      "title": "Mark-applied action available from fallback page",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to fallback page with URL param", "expected": "Page loads", "observed": "Page loaded but requires authentication" },
+        { "action": "Attempt authentication via Clerk development mode", "expected": "Sign-in successful, mark-applied button visible", "observed": "Authentication blocked by Cloudflare Turnstile CAPTCHA. Cannot reach authenticated state to verify mark-applied control." }
+      ],
+      "evidence": {
+        "screenshots": [
+          "api-layer/agent-browser-fallback/initial-page-load.png",
+          "api-layer/agent-browser-fallback/signin-attempt-result.png"
+        ],
+        "consoleErrors": "Same as VAL-FALLBACK-001 - Turnstile CAPTCHA blocking auth",
+        "network": "N/A - could not authenticate"
+      },
+      "issues": "Blocked by same authentication issue as VAL-FALLBACK-001. Cannot verify mark-applied button presence without authenticated session. The mark-applied action would be rendered by the ExtensionJobChecker component, which requires auth."
+    }
+  ],
+  "frictions": [],
+  "blockers": [
+    {
+      "description": "Clerk development/keyless mode authentication is blocked by Cloudflare Turnstile CAPTCHA in headless browser. The Turnstile widget detects the automated browser environment, returns error 300030, and hangs indefinitely. Sign-up fails with HTTP 400 because the CAPTCHA token is never generated. Additionally, no pre-existing test user account exists in the Clerk development instance, so sign-in also fails ('Couldn't find your account'). This blocks all assertions requiring authenticated state (VAL-FALLBACK-001, VAL-FALLBACK-003, VAL-FALLBACK-004).",
+      "affectedAssertions": ["VAL-FALLBACK-001", "VAL-FALLBACK-003", "VAL-FALLBACK-004"],
+      "quickFixAttempted": "Tried sign-up with minh@example.com/TestPassword123! (CAPTCHA blocked). Tried sign-in with same credentials (no account found). Tried clicking CAPTCHA checkbox at coordinates (timed out). Verified the page loads correctly and URL parameter is preserved."
+    }
+  ],
+  "summary": "Tested 3 assertions: 0 passed, 0 failed, 3 blocked. All assertions require Clerk authentication which is blocked by Cloudflare Turnstile CAPTCHA in the automated browser environment. The fallback page correctly loads, shows the sign-in prompt for unauthenticated users, and preserves the URL parameter in the address bar. The Clerk sign-in/sign-up modal renders correctly in development mode but the Turnstile bot detection prevents completing authentication."
+}

@@ -83,8 +83,15 @@ Agent-browser tests validate the web fallback page through real browser interact
 - For signed-out assertions (VAL-FALLBACK-002), agent-browser can verify without auth
 - For signed-in assertions (VAL-FALLBACK-001, 003, 004, 005), Clerk auth is required
 
-**Known Issue (api-layer round 1):**
-- Dev server returns 500 on all pages due to Clerk error: "clerkMiddleware() was not run, your middleware or proxy file might be misplaced. Move your middleware or proxy file to ./src/middleware.ts. Currently located at ./middleware.ts"
-- This blocks ALL agent-browser testing. The middleware file is at `./middleware.ts` (project root) but Clerk 7.0.7 expects it at `./src/middleware.ts`.
-- AGENTS.md marks middleware.ts as off-limits, so this cannot be fixed by workers.
-- Workaround: Fall back to vitest server component tests which mock Clerk auth.
+**Resolved Issue (api-layer round 1 → round 2):**
+- ~~Dev server returns 500 on all pages due to Clerk error: "clerkMiddleware() was not run"~~
+- FIXED: middleware.ts moved from project root to src/middleware.ts (commit 244b9f5). Dev server now returns 200 on all pages.
+
+**Known Issue (api-layer round 2):**
+- Clerk development/keyless mode authentication is blocked by Cloudflare Turnstile CAPTCHA in headless/automated browsers.
+- The Turnstile widget detects the automated browser environment, returns error 300030, and hangs indefinitely.
+- Sign-up fails with HTTP 400 because the CAPTCHA token is never generated.
+- No pre-existing test user account exists in the Clerk development instance.
+- This blocks all agent-browser assertions requiring authenticated state (VAL-FALLBACK-001, VAL-FALLBACK-003, VAL-FALLBACK-004).
+- Workaround: Server-side rendering verified via vitest (component receives correct props). Client-side behavior (auto-check, result rendering, mark-applied button) cannot be verified without authenticated browser session.
+- Potential fix: Pre-create a test user in Clerk dashboard, or configure Clerk to bypass Turnstile in test environments.

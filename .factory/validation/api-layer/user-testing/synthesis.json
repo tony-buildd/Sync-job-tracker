@@ -1,67 +1,35 @@
 {
   "milestone": "api-layer",
-  "round": 1,
+  "round": 2,
   "status": "fail",
   "assertionsSummary": {
-    "total": 29,
-    "passed": 26,
+    "total": 3,
+    "passed": 0,
     "failed": 0,
     "blocked": 3
   },
-  "passedAssertions": [
-    "VAL-CHECK-001",
-    "VAL-CHECK-002",
-    "VAL-CHECK-003",
-    "VAL-CHECK-004",
-    "VAL-CHECK-005",
-    "VAL-CHECK-006",
-    "VAL-CHECK-007",
-    "VAL-CHECK-008",
-    "VAL-CHECK-009",
-    "VAL-CHECK-010",
-    "VAL-MARK-001",
-    "VAL-MARK-002",
-    "VAL-MARK-003",
-    "VAL-MARK-004",
-    "VAL-MARK-005",
-    "VAL-MARK-006",
-    "VAL-MARK-007",
-    "VAL-MARK-008",
-    "VAL-MARK-009",
-    "VAL-MARK-010",
-    "VAL-MARK-011",
-    "VAL-CROSS-006",
-    "VAL-CROSS-007",
-    "VAL-FALLBACK-002",
-    "VAL-FALLBACK-005",
-    "VAL-FALLBACK-006"
-  ],
+  "passedAssertions": [],
   "failedAssertions": [],
   "blockedAssertions": [
     {
       "id": "VAL-FALLBACK-001",
-      "blockedBy": "Clerk middleware error prevents dev server page rendering; auto-check behavior is client-side in ExtensionJobChecker, needs browser testing. Server-side rendering verified via vitest (props correctly passed)."
+      "blockedBy": "Cloudflare Turnstile CAPTCHA blocks automated Clerk authentication in agent-browser. Dev server 500 fixed (middleware moved to src/middleware.ts), but CAPTCHA prevents sign-up/sign-in. Page loads (200), URL preserved. Server-side rendering verified via vitest (prefillUrl passed to ExtensionJobChecker)."
     },
     {
       "id": "VAL-FALLBACK-003",
-      "blockedBy": "Clerk middleware error prevents dev server page rendering; match status display is client-side rendering within ExtensionJobChecker. Server-side verified via vitest (component rendered with correct props)."
+      "blockedBy": "Cloudflare Turnstile CAPTCHA blocks automated Clerk authentication in agent-browser. Cannot verify client-side match status display, parsed fields, or application history without authenticated session. Server-side rendering verified via vitest (component receives correct props)."
     },
     {
       "id": "VAL-FALLBACK-004",
-      "blockedBy": "Clerk middleware error prevents dev server page rendering; mark-applied action is client-side interactive UI within ExtensionJobChecker. Server-side verified via vitest (component rendered)."
+      "blockedBy": "Cloudflare Turnstile CAPTCHA blocks automated Clerk authentication in agent-browser. Cannot verify mark-applied button presence without authenticated session. Server-side rendering verified via vitest (component rendered)."
     }
   ],
   "appliedUpdates": [
     {
       "target": "user-testing.md",
-      "description": "Added Flow Validator Guidance sections for vitest and agent-browser surfaces",
-      "source": "setup"
-    },
-    {
-      "target": "user-testing.md",
-      "description": "Documented Clerk middleware blocker: dev server 500 on all pages due to middleware.ts location mismatch",
+      "description": "Updated Known Issue: middleware fix resolved (round 1 blocker). Documented new blocker: Cloudflare Turnstile CAPTCHA blocks automated Clerk auth in headless browsers.",
       "source": "flow-report"
     }
   ],
-  "previousRound": null
+  "previousRound": ".factory/validation/api-layer/user-testing/synthesis-round1.json"
 }
