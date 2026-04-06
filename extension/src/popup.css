@@ -1,0 +1,89 @@
+/* Sync Job Tracker – Popup Styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  color: #1a1a2e;
+  background: #ffffff;
+  width: 360px;
+  min-height: 120px;
+}
+
+.popup-container {
+  padding: 16px;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.popup-header h1 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.status {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.status.loading {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status.ready {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status.unavailable {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.popup-body {
+  margin-bottom: 12px;
+}
+
+.url-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.url-value {
+  font-size: 13px;
+  color: #374151;
+  word-break: break-all;
+  line-height: 1.4;
+  max-height: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.popup-footer {
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.footer-text {
+  font-size: 11px;
+  color: #9ca3af;
+  text-align: center;
+}
