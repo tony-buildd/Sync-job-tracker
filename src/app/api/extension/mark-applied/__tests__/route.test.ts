@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { ConvexError } from "convex/values";
 
 // ---------------------------------------------------------------------------
 // Mocks – Clerk auth and ConvexHttpClient
@@ -747,9 +748,9 @@ describe("POST /api/extension/mark-applied", () => {
     it("returns structured error for URL with no canonical keys and no overrides (VAL-MARK-009)", async () => {
       setAuthenticatedUser("allowed@example.com");
 
-      // Convex throws ConvexError about insufficient identity
+      // Convex throws ConvexError about insufficient identity (structured error, not plain Error)
       mockMutation.mockRejectedValue(
-        new Error(
+        new ConvexError(
           "This job needs either a stable job ID or an exact company, title, and location before it can be saved as applied.",
         ),
       );

@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
+import { ConvexError } from "convex/values";
 import { api } from "../../../../../convex/_generated/api";
 import { markAppliedRequestSchema } from "../../../../../shared/extension-api";
 import { isAllowedEmail } from "../../../../../shared/access";
@@ -17,6 +18,23 @@ type ConvexApplicationResult = {
   userName: string;
   userEmail?: string | null;
 };
+
+/**
+ * Check if an error is a Convex application error (ConvexError) indicating
+ * the job lacks sufficient identity fields (no canonical key and no overrides).
+ */
+function isInsufficientIdentityError(error: unknown): boolean {
+  return error instanceof ConvexError && typeof error.data === "string";
+}
+
+/**
+ * Check if an error is a Convex system error related to an invalid or
+ * non-existent document ID (e.g. malformed matchedJobId).
+ * These are plain Errors thrown by Convex internals, not ConvexErrors.
+ */
+function isInvalidIdError(error: unknown): boolean {
+  return error instanceof Error && !(error instanceof ConvexError);
+}
 
 function mapApplications(
   apps: ConvexApplicationResult[],
@@ -141,27 +159,21 @@ export async function POST(request: Request): Promise<Response> {
 
     return Response.json(response, { status: 200 });
   } catch (error) {
-    // Handle Convex ConvexError (structured errors) vs generic errors
-    // ConvexError from insufficient identity fields should return 400
+    // ConvexError = application-level error from Convex backend (e.g. insufficient identity)
+    // Plain Error = system/validation error from Convex internals (e.g. invalid document ID)
     const message =
       error instanceof Error ? error.message : "Internal server error";
 
-    // If it's a ConvexError about insufficient identity, return 400
-    if (
-      message.includes("stable job ID") ||
-      message.includes("company, title, and location")
-    ) {
+    // Structured check: ConvexError with string data indicates a business logic error
+    // from the Convex mutation (e.g. insufficient identity fields) → 400
+    if (isInsufficientIdentityError(error)) {
       return Response.json({ error: message }, { status: 400 });
     }
 
-    // Invalid matchedJobId: Convex throws when the ID format is invalid
-    // Fall through gracefully by retrying without matchedJobId
-    if (
-      matchedJobId !== undefined &&
-      (message.includes("Invalid ID") ||
-        message.includes("Could not find") ||
-        message.includes("is not a valid ID"))
-    ) {
+    // Invalid matchedJobId: Convex system errors (plain Error, not ConvexError)
+    // when the ID format is invalid or the document doesn't exist.
+    // Fall through gracefully by retrying without matchedJobId.
+    if (matchedJobId !== undefined && isInvalidIdError(error)) {
       try {
         const token = await getToken({ template: "convex" });
         const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
@@ -192,10 +204,8 @@ export async function POST(request: Request): Promise<Response> {
             ? retryError.message
             : "Internal server error";
 
-        if (
-          retryMessage.includes("stable job ID") ||
-          retryMessage.includes("company, title, and location")
-        ) {
+        // Retry may also produce a ConvexError for insufficient identity → 400
+        if (isInsufficientIdentityError(retryError)) {
           return Response.json({ error: retryMessage }, { status: 400 });
         }
 
