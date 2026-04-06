@@ -1,0 +1,43 @@
+{
+  "milestone": "chrome-extension",
+  "round": 1,
+  "status": "fail",
+  "assertionsSummary": {
+    "total": 28,
+    "passed": 4,
+    "failed": 0,
+    "blocked": 24
+  },
+  "passedAssertions": ["VAL-EXT-001", "VAL-EXT-002", "VAL-EXT-004", "VAL-EXT-005"],
+  "failedAssertions": [],
+  "blockedAssertions": [
+    { "id": "VAL-FALLBACK-001", "blockedBy": "Clerk Turnstile CAPTCHA blocks automated browser authentication" },
+    { "id": "VAL-FALLBACK-003", "blockedBy": "Clerk Turnstile CAPTCHA blocks automated browser authentication" },
+    { "id": "VAL-FALLBACK-004", "blockedBy": "Clerk Turnstile CAPTCHA blocks automated browser authentication" },
+    { "id": "VAL-EXT-003", "blockedBy": "Requires manual Chrome extension testing — keyboard shortcut verification" },
+    { "id": "VAL-EXT-006", "blockedBy": "Requires manual Chrome extension testing — chrome.storage behavior" },
+    { "id": "VAL-EXT-007", "blockedBy": "Requires manual Chrome extension testing — API timeout behavior" },
+    { "id": "VAL-POPUP-001", "blockedBy": "Requires manual Chrome extension testing — popup New Job state" },
+    { "id": "VAL-POPUP-002", "blockedBy": "Requires manual Chrome extension testing — popup Already Applied state" },
+    { "id": "VAL-POPUP-003", "blockedBy": "Requires manual Chrome extension testing — popup Possible Duplicate state" },
+    { "id": "VAL-POPUP-004", "blockedBy": "Requires manual Chrome extension testing — popup Manual Details state" },
+    { "id": "VAL-POPUP-005", "blockedBy": "Requires manual Chrome extension testing — popup Non-job URL fallback" },
+    { "id": "VAL-POPUP-006", "blockedBy": "Requires manual Chrome extension testing — popup Auth failure states" },
+    { "id": "VAL-POPUP-007", "blockedBy": "Requires manual Chrome extension testing — popup Network error state" },
+    { "id": "VAL-POPUP-008", "blockedBy": "Requires manual Chrome extension testing — popup Mark as Applied flow" },
+    { "id": "VAL-POPUP-009", "blockedBy": "Requires manual Chrome extension testing — popup Mark error/retry" },
+    { "id": "VAL-POPUP-010", "blockedBy": "Requires manual Chrome extension testing — popup Loading state" },
+    { "id": "VAL-POPUP-011", "blockedBy": "Requires manual Chrome extension testing — popup Tab switching" },
+    { "id": "VAL-CROSS-001", "blockedBy": "Requires manual Chrome extension testing — full check→mark→recheck cycle" },
+    { "id": "VAL-CROSS-002", "blockedBy": "Requires manual Chrome extension testing — cross-URL duplicate detection" },
+    { "id": "VAL-CROSS-003", "blockedBy": "Requires manual Chrome extension testing — signed-out fallback flow" },
+    { "id": "VAL-CROSS-004", "blockedBy": "Requires manual Chrome extension testing — cross-surface data consistency" },
+    { "id": "VAL-CROSS-005", "blockedBy": "Requires manual Chrome extension testing — mark with metadata persistence" },
+    { "id": "VAL-CROSS-008", "blockedBy": "Requires manual Chrome extension testing — manual correction flow" },
+    { "id": "VAL-CROSS-009", "blockedBy": "Requires manual Chrome extension testing — 403 end-to-end flow" }
+  ],
+  "appliedUpdates": [
+    { "target": "user-testing.md", "description": "Added 'Flow Validator Guidance: manual (Chrome Extension)' section documenting which assertions can be code-verified vs require real Chrome interaction", "source": "setup" }
+  ],
+  "previousRound": null
+}

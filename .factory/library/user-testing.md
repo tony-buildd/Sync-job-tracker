@@ -95,3 +95,22 @@ Agent-browser tests validate the web fallback page through real browser interact
 - This blocks all agent-browser assertions requiring authenticated state (VAL-FALLBACK-001, VAL-FALLBACK-003, VAL-FALLBACK-004).
 - Workaround: Server-side rendering verified via vitest (component receives correct props). Client-side behavior (auto-check, result rendering, mark-applied button) cannot be verified without authenticated browser session.
 - Potential fix: Pre-create a test user in Clerk dashboard, or configure Clerk to bypass Turnstile in test environments.
+
+## Flow Validator Guidance: manual (Chrome Extension)
+
+Chrome extension popup, service worker, and keyboard shortcuts require loading the extension as unpacked in Chrome (`chrome://extensions`). These cannot be automated with agent-browser or curl.
+
+**What can be code-verified (without Chrome):**
+- VAL-EXT-001: manifest.json inspection confirms MV3, minimal permissions, commands section
+- VAL-EXT-002: popup.html inspection confirms no inline scripts, `<script src="popup.js" type="module">`
+- VAL-EXT-004: Build command succeeds, dist/ contains all required files
+- VAL-EXT-005: api-client.ts code inspection confirms `credentials: 'include'` and correct origin
+- VAL-EXT-007: api-client.ts has TIMEOUT_MS = 10000 and TimeoutError handling
+
+**What requires real Chrome interaction:**
+- VAL-EXT-003: Keyboard shortcut behavior
+- VAL-EXT-006: chrome.storage.local caching behavior
+- All VAL-POPUP-* assertions: Popup UI state rendering
+- All VAL-CROSS-* assertions: Full flow interactions
+
+**Isolation:** Manual testing has no concurrency concerns — single user in Chrome.

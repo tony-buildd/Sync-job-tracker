@@ -1,0 +1,83 @@
+{
+  "groupId": "ext-infrastructure",
+  "testedAt": "2026-04-06T00:10:00.000Z",
+  "isolation": {
+    "repoRoot": "/Users/minhthiennguyen/Desktop/job-tracker",
+    "extensionDir": "/Users/minhthiennguyen/Desktop/job-tracker/extension"
+  },
+  "toolsUsed": ["code-inspection", "npm-build"],
+  "assertions": [
+    {
+      "id": "VAL-EXT-001",
+      "title": "Valid Manifest V3 with minimal permissions",
+      "status": "pass",
+      "steps": [
+        { "action": "Read extension/manifest.json", "expected": "manifest_version: 3", "observed": "manifest_version: 3" },
+        { "action": "Check permissions array", "expected": "Only activeTab and storage", "observed": "permissions: [\"activeTab\", \"storage\"]" },
+        { "action": "Check host_permissions", "expected": "Scoped to app origin only", "observed": "host_permissions: [\"http://localhost:3000/*\"]" },
+        { "action": "Check commands section", "expected": "Keyboard shortcut defined", "observed": "commands._execute_action with Ctrl+Shift+J / Command+Shift+J" },
+        { "action": "Check for broad permissions", "expected": "No tabs, <all_urls>, webRequest", "observed": "None of these broad permissions present" }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "n/a (code inspection only)",
+        "codeInspection": "chrome-extension/ext-infrastructure/VAL-EXT-001-manifest-inspection.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-EXT-002",
+      "title": "Popup HTML/JS load without errors, CSP compliant",
+      "status": "pass",
+      "steps": [
+        { "action": "Read extension/src/popup.html", "expected": "No inline <script> tags", "observed": "No inline <script> tags found" },
+        { "action": "Search for inline event handlers", "expected": "No onclick, onload, etc.", "observed": "No inline event handlers found" },
+        { "action": "Verify JS loading method", "expected": "All JS via <script src=\"...\">", "observed": "<script src=\"popup.js\" type=\"module\"></script>" }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "n/a (code inspection only — runtime console check requires Chrome)",
+        "codeInspection": "chrome-extension/ext-infrastructure/VAL-EXT-002-popup-csp-inspection.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-EXT-004",
+      "title": "Build produces valid output",
+      "status": "pass",
+      "steps": [
+        { "action": "Run cd extension && npm run build", "expected": "Build completes with exit code 0", "observed": "Exit code 0; Done in 11ms" },
+        { "action": "Check dist/ for manifest.json", "expected": "manifest.json present", "observed": "manifest.json present (861 bytes)" },
+        { "action": "Check dist/ for popup.html", "expected": "popup.html present", "observed": "popup.html present (9626 bytes)" },
+        { "action": "Check dist/ for popup.js", "expected": "popup.js present", "observed": "popup.js present (8340 bytes)" },
+        { "action": "Check dist/ for service worker", "expected": "background.js present", "observed": "background.js present (253 bytes)" }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "n/a",
+        "buildOutput": "chrome-extension/ext-infrastructure/VAL-EXT-004-build-output.txt"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-EXT-005",
+      "title": "API client sends credentials to correct origin",
+      "status": "pass",
+      "steps": [
+        { "action": "Read extension/src/api-client.ts", "expected": "API_ORIGIN = http://localhost:3000", "observed": "const API_ORIGIN = \"http://localhost:3000\"" },
+        { "action": "Inspect checkUrl() fetch call", "expected": "credentials: 'include', targets API_ORIGIN", "observed": "credentials: \"include\", URL: ${API_ORIGIN}/api/extension/check" },
+        { "action": "Inspect markApplied() fetch call", "expected": "credentials: 'include', targets API_ORIGIN", "observed": "credentials: \"include\", URL: ${API_ORIGIN}/api/extension/mark-applied" },
+        { "action": "Search for other fetch calls or origins", "expected": "No requests to unexpected origins", "observed": "Only two fetch calls, both to API_ORIGIN" }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "n/a (code inspection only — runtime Cookie header check requires Chrome)",
+        "codeInspection": "chrome-extension/ext-infrastructure/VAL-EXT-005-api-client-inspection.txt"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 4 assertions via code inspection and build verification: all 4 passed. VAL-EXT-001 confirmed MV3 manifest with minimal permissions. VAL-EXT-002 confirmed CSP-compliant popup HTML with no inline scripts. VAL-EXT-004 confirmed successful build with all required output files. VAL-EXT-005 confirmed all fetch calls use credentials: include targeting http://localhost:3000."
+}

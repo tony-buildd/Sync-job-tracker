@@ -1,0 +1,110 @@
+{
+  "groupId": "fallback-page",
+  "testedAt": "2026-04-06T00:00:00.000Z",
+  "isolation": {
+    "appUrl": "http://localhost:3000",
+    "testUrl": "http://localhost:3000/extension/check?url=https%3A%2F%2Fjobs.nutrien.com%2Fjob%2F30186-en_US",
+    "credentials": "none — no pre-existing test user; sign-up blocked by CAPTCHA"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-FALLBACK-001",
+      "title": "Page loads, URL param pre-fills input, auto-runs check",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Navigate to /extension/check?url=https%3A%2F%2Fjobs.nutrien.com%2Fjob%2F30186-en_US",
+          "expected": "Page loads (200) with authenticated view showing pre-filled URL and auto-check",
+          "observed": "Page loads (200) but renders SignInPrompt because user is not authenticated. Cannot verify URL pre-fill or auto-check behavior."
+        },
+        {
+          "action": "Click 'Sign in with Google' button to open Clerk sign-in modal",
+          "expected": "Sign-in modal opens",
+          "observed": "Clerk sign-in/sign-up modal opens correctly with email, password, and 'Continue with Google' options"
+        },
+        {
+          "action": "Fill sign-up form with email minh@example.com and password, click Continue",
+          "expected": "Account created and redirected back to check page",
+          "observed": "Cloudflare Turnstile CAPTCHA appears ('Verify you are human' checkbox). Continue button stuck in Loading state. Form fields disabled. CAPTCHA token never generated due to automated browser detection."
+        },
+        {
+          "action": "Wait 10 seconds for CAPTCHA to resolve",
+          "expected": "CAPTCHA resolves and sign-up proceeds",
+          "observed": "CAPTCHA remains unresolved. cf-turnstile-response hidden input is empty. Sign-up cannot proceed."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "chrome-extension/fallback-page/VAL-FALLBACK-001-initial-load.png",
+          "chrome-extension/fallback-page/VAL-FALLBACK-001-signin-prompt.png",
+          "chrome-extension/fallback-page/VAL-FALLBACK-001-signin-modal.png",
+          "chrome-extension/fallback-page/VAL-FALLBACK-001-signup-modal.png",
+          "chrome-extension/fallback-page/VAL-FALLBACK-001-signup-attempt.png",
+          "chrome-extension/fallback-page/VAL-FALLBACK-001-captcha-blocked.png"
+        ],
+        "consoleErrors": "@clerk/react: You've passed multiple children components to <SignInButton/>. You can only pass a single child component or text.",
+        "network": "GET /extension/check?url=... -> 200 (renders SignInPrompt for unauthenticated user)"
+      },
+      "issues": "Clerk development mode uses Cloudflare Turnstile CAPTCHA which detects automated browsers and prevents sign-up/sign-in. The cf-turnstile-response hidden input never receives a token. Without authentication, the page renders SignInPrompt instead of the authenticated ExtensionJobChecker component, so URL pre-fill and auto-check cannot be verified via agent-browser. Additionally, there is a Clerk error: SignInButton receives multiple children components (line 24 of page.tsx)."
+    },
+    {
+      "id": "VAL-FALLBACK-003",
+      "title": "Displays match status, parsed job info, and application history",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Navigate to /extension/check?url=... while authenticated",
+          "expected": "Auto-check completes and displays status label, parsed fields, and application history",
+          "observed": "Cannot reach authenticated state due to Turnstile CAPTCHA blocking sign-up. Page shows SignInPrompt instead of check results."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "chrome-extension/fallback-page/VAL-FALLBACK-001-signin-prompt.png",
+          "chrome-extension/fallback-page/VAL-FALLBACK-001-captcha-blocked.png"
+        ],
+        "consoleErrors": "@clerk/react: You've passed multiple children components to <SignInButton/>.",
+        "network": "GET /extension/check?url=... -> 200 (but renders unauthenticated view)"
+      },
+      "issues": "Blocked by same Clerk Turnstile CAPTCHA issue as VAL-FALLBACK-001. The ExtensionJobChecker component (which renders status badges, parsed fields, and application entries) only renders for authenticated, allowlisted users. Code review confirms the component structure exists (STATUS_COPY map with New/Already Applied/Possible Duplicate/Needs Manual Details labels, parsed fields display with Company/Title/Location/Job ID, and Prior Applicants section), but cannot be verified through agent-browser without authentication."
+    },
+    {
+      "id": "VAL-FALLBACK-004",
+      "title": "Mark-applied action available from fallback page",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Navigate to /extension/check?url=... while authenticated and view check results",
+          "expected": "A 'Mark as Applied' button is present and interactable after check results display",
+          "observed": "Cannot reach authenticated state due to Turnstile CAPTCHA blocking sign-up. Page shows SignInPrompt instead of check results with mark-applied action."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "chrome-extension/fallback-page/VAL-FALLBACK-001-signin-prompt.png",
+          "chrome-extension/fallback-page/VAL-FALLBACK-001-captcha-blocked.png"
+        ],
+        "consoleErrors": "@clerk/react: You've passed multiple children components to <SignInButton/>.",
+        "network": "GET /extension/check?url=... -> 200 (but renders unauthenticated view)"
+      },
+      "issues": "Blocked by same Clerk Turnstile CAPTCHA issue as VAL-FALLBACK-001. Code review confirms the mark-applied section exists in ExtensionJobChecker: a 'Mark as applied' button with handleMarkApplied handler, optional form fields (company, title, location, job ID, resume version, profile label, notes), save validation, and success/error state rendering. The button is conditionally shown when status !== 'already_applied'. Cannot be verified through agent-browser without authentication."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Initial page load showed a Next.js runtime error overlay: '@clerk/react: You've passed multiple children components to <SignInButton/>'. On subsequent loads the error overlay did not reappear, but the console error persists.",
+      "resolved": false,
+      "resolution": "This is a bug in src/app/extension/check/page.tsx line 24 where SignInButton wraps a button child. The Clerk component expects a single child or text. This does not block the sign-in flow (the modal still opens) but produces a console error.",
+      "affectedAssertions": ["VAL-FALLBACK-001", "VAL-FALLBACK-003", "VAL-FALLBACK-004"]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Clerk development/keyless mode authentication is blocked by Cloudflare Turnstile CAPTCHA in automated browsers. The Turnstile widget detects agent-browser (headless Chromium) and never generates a token, leaving the cf-turnstile-response input empty and the sign-up/sign-in form in a permanent loading state. No pre-existing test user accounts exist in the Clerk development instance.",
+      "affectedAssertions": ["VAL-FALLBACK-001", "VAL-FALLBACK-003", "VAL-FALLBACK-004"],
+      "quickFixAttempted": "Attempted sign-up with minh@example.com via Clerk modal. Turnstile CAPTCHA appeared after filling email and password. Waited 10+ seconds for CAPTCHA to resolve — it did not. Verified cf-turnstile-response hidden input remains empty. This matches the documented known issue from previous validation rounds."
+    }
+  ],
+  "summary": "Tested 3 assertions: 0 passed, 0 failed, 3 blocked. All three assertions (VAL-FALLBACK-001, VAL-FALLBACK-003, VAL-FALLBACK-004) are blocked by Clerk Turnstile CAPTCHA preventing automated browser authentication. The page loads successfully (HTTP 200) and renders the SignInPrompt for unauthenticated users, but the authenticated ExtensionJobChecker view — which contains the URL pre-fill, auto-check, status display, parsed fields, application history, and mark-applied functionality — cannot be reached. Code review confirms all required UI elements exist in the component source. A secondary issue was found: SignInButton in page.tsx produces a Clerk console error about multiple children."
+}
