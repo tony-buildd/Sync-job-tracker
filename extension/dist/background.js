@@ -1,1 +1,0 @@
-chrome.runtime.onInstalled.addListener(e=>{e.reason==="install"?console.log("Sync Job Tracker extension installed"):e.reason==="update"&&console.log("Sync Job Tracker extension updated")});chrome.runtime.onMessage.addListener((e,o,n)=>(n({ok:!0}),!0));
