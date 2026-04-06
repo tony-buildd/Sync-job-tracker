@@ -417,9 +417,9 @@ async function runCheck(url: string): Promise<void> {
     renderCheckResult(result);
     await setCachedResult(url, result);
   } catch (err) {
-    if (err instanceof AuthError && err.status === 401) {
+    if (err instanceof AuthError) {
       renderAuth401();
-    } else if (err instanceof ForbiddenError || (err instanceof AuthError && err.status === 403)) {
+    } else if (err instanceof ForbiddenError) {
       renderAuth403();
     } else if (err instanceof NetworkError || err instanceof TimeoutError) {
       renderNetworkError(

@@ -24,8 +24,8 @@ const TIMEOUT_MS = 10_000;
 // ---------------------------------------------------------------------------
 
 export class AuthError extends Error {
-  readonly status: 401 | 403;
-  constructor(message: string, status: 401 | 403) {
+  readonly status: 401;
+  constructor(message: string, status: 401) {
     super(message);
     this.name = "AuthError";
     this.status = status;
