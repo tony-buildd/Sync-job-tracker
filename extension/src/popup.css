@@ -378,3 +378,54 @@ body {
   border-top: 1px solid #e5e7eb;
   margin: 4px 0;
 }
+
+/* ------------------------------------------------ Re-check transition */
+
+.popup-container {
+  transition: opacity 0.2s ease;
+}
+
+.recheck-fade-out {
+  opacity: 0.4;
+}
+
+.recheck-fade-in {
+  animation: recheckFadeIn 0.2s ease forwards;
+}
+
+@keyframes recheckFadeIn {
+  from { opacity: 0.4; }
+  to   { opacity: 1; }
+}
+
+/* Small spinner next to the URL bar during background re-check */
+.recheck-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+/* "Status updated" indicator banner */
+.recheck-indicator {
+  font-size: 11px;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 4px 10px;
+  margin-bottom: 8px;
+  text-align: center;
+  animation: recheckIndicatorIn 0.3s ease;
+}
+
+@keyframes recheckIndicatorIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

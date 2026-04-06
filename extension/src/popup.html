@@ -17,6 +17,13 @@
     <div class="url-bar">
       <span class="url-label">Current page:</span>
       <span id="current-url" class="url-value">Reading…</span>
+      <!-- Subtle spinner shown during background re-check -->
+      <span id="recheck-spinner" class="recheck-spinner hidden" title="Re-checking…"></span>
+    </div>
+
+    <!-- Re-check status-changed indicator (shown briefly on transition) -->
+    <div id="recheck-indicator" class="recheck-indicator hidden">
+      ↻ Status updated
     </div>
 
     <!-- LOADING state -->

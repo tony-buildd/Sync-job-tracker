@@ -404,6 +404,49 @@ async function handleManualSubmit(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Transition helpers – smooth cross-fade when re-check returns a new status
+// ---------------------------------------------------------------------------
+
+/** Determine the effective visual state for a CheckResponse. */
+function getEffectiveState(data: CheckResponse): string {
+  if (data.status === "already_applied") return "applied";
+  if (data.status === "possible_duplicate") return "duplicate";
+  if (data.status === "new") {
+    const job = data.parsedJob;
+    const hasCompany = !!job.companyName;
+    const hasJobId = !!job.externalJobId;
+    const hasTitleAndLocation = !!job.jobTitle && !!job.jobLocation;
+    return hasCompany && (hasJobId || hasTitleAndLocation) ? "new" : "manual";
+  }
+  return "unparseable";
+}
+
+/** Show a brief "Status updated" indicator and cross-fade to the new state. */
+function transitionToNewResult(data: CheckResponse): void {
+  const container = document.querySelector(".popup-container") as HTMLElement;
+
+  // Add the fade-out class to trigger the CSS transition
+  container.classList.add("recheck-fade-out");
+
+  // Show the re-check indicator
+  show("recheck-indicator");
+
+  // After the fade-out completes, render the new state and fade back in
+  setTimeout(() => {
+    renderCheckResult(data);
+    container.classList.remove("recheck-fade-out");
+    container.classList.add("recheck-fade-in");
+
+    // Clean up the fade-in class after animation completes
+    setTimeout(() => {
+      container.classList.remove("recheck-fade-in");
+      // Auto-hide the indicator after a short display period
+      setTimeout(() => hide("recheck-indicator"), 2000);
+    }, 200);
+  }, 200);
+}
+
+// ---------------------------------------------------------------------------
 // Main flow
 // ---------------------------------------------------------------------------
 
@@ -435,6 +478,49 @@ async function runCheck(url: string): Promise<void> {
   }
 }
 
+/**
+ * Background re-check: fetches fresh data without showing a loading spinner.
+ * If the result's effective state differs from the cached one, applies a
+ * smooth cross-fade transition instead of flashing between states.
+ */
+async function backgroundRecheck(
+  url: string,
+  cachedResult: CheckResponse
+): Promise<void> {
+  // Show a subtle re-checking indicator
+  show("recheck-spinner");
+
+  try {
+    const result = await checkUrl(url);
+    hide("recheck-spinner");
+
+    currentCheckData = result;
+    await setCachedResult(url, result);
+
+    // Compare effective visual states — only transition on meaningful change
+    const oldState = getEffectiveState(cachedResult);
+    const newState = getEffectiveState(result);
+
+    if (oldState !== newState) {
+      transitionToNewResult(result);
+    } else {
+      // Same state — silently update the rendered details without transition
+      renderCheckResult(result);
+    }
+  } catch (err) {
+    hide("recheck-spinner");
+
+    // On error during background re-check, keep showing the cached result.
+    // Only show errors if they're auth-related (cached result is stale/invalid).
+    if (err instanceof AuthError) {
+      renderAuth401();
+    } else if (err instanceof ForbiddenError) {
+      renderAuth403();
+    }
+    // Network/timeout errors are silently ignored — the cached result stays.
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // Read active tab URL
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
@@ -455,9 +541,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cached) {
       currentCheckData = cached.result;
       renderCheckResult(cached.result);
+
+      // Background re-check without loading flash
+      await backgroundRecheck(url, cached.result);
+      return;
     }
 
-    // Always re-check in background (even if cached)
+    // No cache — full check with loading spinner
     await runCheck(url);
   });
 
