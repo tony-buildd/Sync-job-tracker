@@ -1,0 +1,28 @@
+{
+  "featureId": "fix-error-classification-too-broad",
+  "reviewedAt": "2026-04-06T07:48:40.000Z",
+  "commitId": "b82c799",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The fix adequately narrows both error classification functions. isInsufficientIdentityError now checks error.data content for 'stable job id' or 'company, title, and location' instead of matching any ConvexError with string data. isInvalidIdError now checks error.message for 'invalid id', 'is not a valid id', or 'could not find' + 'id' instead of matching any non-ConvexError Error. Seven well-targeted tests were added covering workspace/job creation ConvexErrors (→ 500), identity ConvexErrors (→ 400), non-ID plain Errors (→ 500 without retry), and three ID-related error formats (→ retry). All 30 mark-applied route tests pass.",
+    "issues": [
+      {
+        "file": "src/app/api/extension/mark-applied/route.ts",
+        "line": 52,
+        "severity": "non_blocking",
+        "description": "The pattern `msg.includes(\"could not find\") && msg.includes(\"id\")` operates on a lowercased string, so 'id' matches substrings in common words like 'valid', 'invalid', 'identity', 'provided'. For example, 'Could not find the specified validation rule' would match because lowercased 'validation' contains 'id'. In practice this is unlikely to cause false positives because only Convex internal document ID errors produce plain Errors in this context, but a more precise pattern like `msg.includes(\"could not find\") && /\\bid\\b/.test(msg)` (word boundary) would be tighter."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The Convex backend (convex/jobs.ts) throws five distinct ConvexError messages with string data. The mark-applied route now relies on substring matching against two of these messages for identity errors. If the Convex error message text changes, the route's error classification would silently break. AGENTS.md says 'Do NOT modify existing Convex functions' which protects against this, but the coupling between Convex error message strings and the API route's error classification is not documented anywhere.",
+      "evidence": "convex/jobs.ts:191-192 throws 'stable job ID or an exact company, title, and location'. route.ts:40-41 matches on these exact substrings. If the Convex message were ever reworded, the route would misclassify it as a 500."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "The fix adequately addresses both issues from the original misc-mark-route-error-handling review. BLOCKING issue #1 (isInsufficientIdentityError too broad): Fixed — now checks error.data content for identity-related keywords, correctly excluding workspace/job creation ConvexErrors. NON-BLOCKING issue #2 (isInvalidIdError too broad): Fixed — now checks error.message for ID-related keywords, correctly excluding generic network/system errors. Seven new tests verify the narrowed classification across all error types. One non-blocking observation: the 'could not find' + 'id' substring match is slightly loose due to case-insensitive 'id' appearing in common words, but practically safe in this Convex context. All 30 tests pass, typecheck and lint clean."
+}

@@ -1,52 +1,45 @@
 {
   "milestone": "misc-api-fixes",
-  "round": 1,
-  "status": "fail",
+  "round": 2,
+  "status": "pass",
   "validatorsRun": {
-    "test": { "passed": true, "command": "npm test", "exitCode": 0 },
+    "test": { "passed": true, "command": "npm test", "exitCode": 0, "details": "137 tests across 6 test files, all passing" },
     "typecheck": { "passed": true, "command": "npx tsc --noEmit", "exitCode": 0 },
     "lint": { "passed": true, "command": "npm run lint", "exitCode": 0 }
   },
   "reviewsSummary": {
-    "total": 2,
+    "total": 1,
     "passed": 1,
-    "failed": 1,
-    "failedFeatures": ["misc-mark-route-error-handling"]
+    "failed": 0,
+    "failedFeatures": []
   },
-  "blockingIssues": [
-    {
-      "featureId": "misc-mark-route-error-handling",
-      "severity": "blocking",
-      "description": "isInsufficientIdentityError is too broad: it returns true for ANY ConvexError with string data (error instanceof ConvexError && typeof error.data === 'string'). convex/jobs.ts throws 5 different ConvexErrors with string data — server errors like 'Unable to create or locate the canonical job record' and 'Unable to initialize the shared workspace' would incorrectly return 400 instead of 500. Fix: add error.data content checks, e.g. error.data.includes('stable job ID') || error.data.includes('company, title, and location')."
-    }
-  ],
-  "appliedUpdates": [
-    {
-      "target": "library",
-      "description": "Created .factory/library/testing.md documenting: (1) happy-dom as the DOM environment for client component tests (jsdom incompatible with Node ESM), (2) @vitest-environment happy-dom directive pattern, (3) Convex error classification pattern for API routes — must combine instanceof ConvexError with error.data content checks.",
-      "sourceFeature": "misc-extension-job-checker-tests, misc-mark-route-error-handling"
-    }
-  ],
+  "blockingIssues": [],
+  "appliedUpdates": [],
   "suggestedGuidanceUpdates": [
     {
       "target": "AGENTS.md",
       "suggestion": "Add to the Testing section: document that @testing-library/react, @testing-library/user-event, and happy-dom are available as dev dependencies for client component testing. Note the `/** @vitest-environment happy-dom */` directive requirement.",
-      "evidence": "Feature misc-extension-job-checker-tests installed these libraries. Future workers writing client component tests won't know they're available without documentation. The AGENTS.md Testing section currently only mentions 'Follow existing vitest patterns in shared/job-matching.test.ts'.",
+      "evidence": "Feature misc-extension-job-checker-tests installed these libraries. Future workers writing client component tests won't know they're available without documentation. The AGENTS.md Testing section currently only mentions 'Follow existing vitest patterns in shared/job-matching.test.ts'. (Carried forward from round 1.)",
       "isSystemic": false
     },
     {
       "target": "AGENTS.md",
-      "suggestion": "Add to the 'API route pattern' or 'Error responses' section: document the error handling pattern for Convex errors in API routes. Specifically: (1) use instanceof ConvexError for type discrimination, (2) also check error.data content to distinguish business errors from server errors, (3) document the matchedJobId retry fallback pattern in mark-applied.",
-      "evidence": "Feature misc-mark-route-error-handling introduced over-broad error matching because the pattern wasn't documented. The mark-applied route has complex error classification logic (ConvexError→400 for specific cases, plain Error→retry with matchedJobId, generic→500) that workers need to understand.",
+      "suggestion": "Add to the 'API route pattern' or 'Error responses' section: document the error handling pattern for Convex errors in API routes. Specifically: (1) use instanceof ConvexError for type discrimination, (2) also check error.data content to distinguish business errors from server errors, (3) document the matchedJobId retry fallback pattern in mark-applied. Note: the coupling between Convex error message strings (convex/jobs.ts) and the route's substring matching means if Convex messages change, the route's error classification silently breaks.",
+      "evidence": "Feature misc-mark-route-error-handling introduced over-broad error matching because the pattern wasn't documented. The fix feature (fix-error-classification-too-broad) narrowed it but the pattern relies on exact substring matching of Convex error messages. convex/jobs.ts:191-192 throws 'stable job ID or an exact company, title, and location'; route.ts:40-41 matches these substrings. (Carried forward from round 1 with additional evidence from round 2 review.)",
       "isSystemic": true
     },
     {
       "target": "skills",
       "suggestion": "Clarify in backend-worker skill that the TDD red-green cycle doesn't apply to test-only features (where the task is purely to add tests for existing code). Test-only features should skip the 'red' phase.",
-      "evidence": "Feature misc-extension-job-checker-tests worker noted in skillFeedback that the TDD requirement was inapplicable for a test-only task.",
+      "evidence": "Feature misc-extension-job-checker-tests worker noted in skillFeedback that the TDD requirement was inapplicable for a test-only task. (Carried forward from round 1.)",
       "isSystemic": false
     }
   ],
-  "rejectedObservations": [],
-  "previousRound": null
+  "rejectedObservations": [
+    {
+      "observation": "The coupling between Convex error message strings and the route's substring matching is not documented anywhere.",
+      "reason": "already-documented — .factory/library/testing.md already documents the Convex error classification pattern with the content-check requirement. The additional coupling risk is minimal because AGENTS.md prohibits modifying convex/jobs.ts, and the suggested AGENTS.md update (carried forward) covers the documentation gap."
+    }
+  ],
+  "previousRound": ".factory/validation/misc-api-fixes/scrutiny/synthesis-round1.json"
 }
