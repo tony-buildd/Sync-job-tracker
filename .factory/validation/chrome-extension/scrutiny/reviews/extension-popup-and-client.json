@@ -1,0 +1,89 @@
+{
+  "featureId": "extension-popup-and-client",
+  "reviewedAt": "2026-04-06T07:15:00.000Z",
+  "commitId": "534e47e",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Solid implementation covering all required states, API client error handling, chrome.storage caching, and mark-applied flow. The API client correctly distinguishes 401/403/network/timeout errors with typed error classes. The popup auto-reads the active tab URL, renders 10 states (loading, new, applied, duplicate, manual, unparseable, unsupported, auth-401, auth-403, network-error), handles mark-applied with optional expandable fields, caches results in chrome.storage.local, and refreshes in background. HTML has no inline scripts (MV3 CSP compliant). 16 well-structured vitest tests cover the API client module. Root vitest.config.ts properly excludes extension tests.",
+    "issues": [
+      {
+        "file": "extension/src/api-client.ts",
+        "line": 29,
+        "severity": "non_blocking",
+        "description": "AuthError.status is typed as '401 | 403' but is only ever constructed with 401 (403 uses ForbiddenError). The type union is misleading and creates a dead code path in popup.ts error handling where `err instanceof AuthError && err.status === 403` can never be true."
+      },
+      {
+        "file": "extension/src/popup.ts",
+        "line": 422,
+        "severity": "non_blocking",
+        "description": "The condition `(err instanceof AuthError && err.status === 403)` is dead code since AuthError is never instantiated with status 403 — ForbiddenError handles that case. The `err instanceof ForbiddenError` check on the same line is sufficient."
+      },
+      {
+        "file": "extension/src/popup.ts",
+        "line": 399,
+        "severity": "non_blocking",
+        "description": "When a cached result is shown immediately and the background re-check returns a different status, the UI flashes from one state to another without any transition or indication. For example, a stale 'already_applied' cache could flash to 'new'. This matches the spec ('show cached, then re-check') but may be jarring UX. Consider adding a subtle re-check indicator or diffing the result before re-rendering."
+      },
+      {
+        "file": "extension/src/__tests__/api-client.test.ts",
+        "line": null,
+        "severity": "non_blocking",
+        "description": "No test coverage for the .catch() fallback paths in handleResponse (lines 121, 128, 134 of api-client.ts) where response.json() throws on malformed JSON. These paths provide sensible defaults and are unlikely to regress, but adding a test for a non-JSON error response would improve coverage."
+      },
+      {
+        "file": "extension/vitest.config.ts",
+        "line": 8,
+        "severity": "non_blocking",
+        "description": "dangerouslyIgnoreUnhandledErrors: true is used to work around fake-timers + AbortController micro-task timing. The comment explains it well, but this flag suppresses ALL unhandled rejections in tests, which could mask real bugs in future tests added to this suite."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "target": "skills",
+      "observation": "The extension-worker skill doesn't mention the need to create a root vitest.config.ts that excludes extension/ tests, even though the worker identified this as a suggested change. Without this, root `npm test` would pick up extension tests that depend on extension-specific mocks/config and fail.",
+      "evidence": "Worker's skillFeedback.suggestedChanges: 'The extension-worker skill could mention the need to create a root vitest.config.ts to exclude extension tests from the root test suite, since the root project picks up all *.test.ts files by default.' Root vitest.config.ts now excludes extension/**: vitest.config.ts line 4."
+    },
+    {
+      "target": "skills",
+      "observation": "The extension-worker skill mentions dangerouslyIgnoreUnhandledErrors may be needed in extension vitest config for AbortController/fake-timer interaction in timeout tests. This is not documented anywhere but the worker discovered and applied it.",
+      "evidence": "extension/vitest.config.ts uses dangerouslyIgnoreUnhandledErrors: true with an explanatory comment about fake timers + AbortController micro-task timing."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "issues": [
+    {
+      "severity": "non_blocking",
+      "description": "AuthError.status typed as '401 | 403' but only instantiated with 401 — creates dead code path in popup.ts error handling",
+      "file": "extension/src/api-client.ts",
+      "line": 29
+    },
+    {
+      "severity": "non_blocking",
+      "description": "Dead code: `err instanceof AuthError && err.status === 403` can never be true since 403 uses ForbiddenError",
+      "file": "extension/src/popup.ts",
+      "line": 422
+    },
+    {
+      "severity": "non_blocking",
+      "description": "UI can flash between cached and fresh state without transition when background re-check returns different status",
+      "file": "extension/src/popup.ts",
+      "line": 399
+    },
+    {
+      "severity": "non_blocking",
+      "description": "No tests for malformed JSON response .catch() fallback paths in handleResponse",
+      "file": "extension/src/__tests__/api-client.test.ts",
+      "line": null
+    },
+    {
+      "severity": "non_blocking",
+      "description": "dangerouslyIgnoreUnhandledErrors: true suppresses all unhandled rejections, could mask future test bugs",
+      "file": "extension/vitest.config.ts",
+      "line": 8
+    }
+  ],
+  "summary": "PASS. The extension popup UI and API client implementation is thorough and well-structured. All 10 popup states are correctly implemented with appropriate UI. The API client properly handles auth (401/403), network, timeout, and general errors with distinct typed error classes. Mark-applied flow works with optional expandable fields and cache invalidation. Chrome.storage caching with background re-check is implemented per spec. HTML is MV3 CSP compliant (no inline scripts). 16 vitest tests provide good API client coverage. Five non-blocking issues identified: misleading AuthError type union, dead code in error handling, cache-to-fresh flash UX, missing malformed JSON test coverage, and broad error suppression in vitest config. No blocking issues."
+}

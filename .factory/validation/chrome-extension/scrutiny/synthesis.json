@@ -1,0 +1,82 @@
+{
+  "milestone": "chrome-extension",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "test": { "passed": true, "command": "npm test", "exitCode": 0, "details": "88 tests passed across 5 files (shared/job-matching, shared/extension-api, extension/check page, check route, mark-applied route). Extension tests: 16 passed with 3 unhandled rejection warnings from timeout test AbortController timing." },
+    "typecheck": { "passed": true, "command": "npx tsc --noEmit", "exitCode": 0 },
+    "lint": { "passed": true, "command": "npm run lint", "exitCode": 0 },
+    "extensionBuild": { "passed": true, "command": "cd extension && npm run build", "exitCode": 0, "details": "Produces dist/popup.js (8.1kb) and dist/background.js (253b)" }
+  },
+  "reviewsSummary": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "nonBlockingIssues": [
+    {
+      "featureId": "extension-scaffold",
+      "severity": "non_blocking",
+      "description": "Initial commit accidentally committed extension/node_modules/ and extension/dist/ to git (35 files, ~4300 lines). Follow-up commit added .gitignore and removed them. Git history is bloated but functionally correct."
+    },
+    {
+      "featureId": "extension-popup-and-client",
+      "severity": "non_blocking",
+      "description": "AuthError.status typed as '401 | 403' but only instantiated with 401 — creates dead code path in popup.ts where `err instanceof AuthError && err.status === 403` can never be true.",
+      "file": "extension/src/api-client.ts",
+      "line": 29
+    },
+    {
+      "featureId": "extension-popup-and-client",
+      "severity": "non_blocking",
+      "description": "Dead code: `err instanceof AuthError && err.status === 403` condition in popup.ts error handling since 403 uses ForbiddenError, not AuthError.",
+      "file": "extension/src/popup.ts",
+      "line": 422
+    },
+    {
+      "featureId": "extension-popup-and-client",
+      "severity": "non_blocking",
+      "description": "UI can flash between cached and fresh state without transition when background re-check returns different status. Functional per spec but may be jarring UX.",
+      "file": "extension/src/popup.ts",
+      "line": 399
+    },
+    {
+      "featureId": "extension-popup-and-client",
+      "severity": "non_blocking",
+      "description": "No test coverage for malformed JSON response .catch() fallback paths in handleResponse.",
+      "file": "extension/src/__tests__/api-client.test.ts"
+    },
+    {
+      "featureId": "extension-popup-and-client",
+      "severity": "non_blocking",
+      "description": "dangerouslyIgnoreUnhandledErrors: true in extension vitest config suppresses all unhandled rejections, could mask future test bugs.",
+      "file": "extension/vitest.config.ts",
+      "line": 8
+    }
+  ],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "skills",
+      "suggestion": "Add to extension-worker skill procedure: create extension/.gitignore (with node_modules/ and dist/) as one of the first steps before running npm install or building, to prevent accidental commits of build artifacts and dependencies.",
+      "evidence": "extension-scaffold worker committed 35 files of node_modules and dist before adding .gitignore in a follow-up commit. Worker's own feedback confirmed this gap.",
+      "isSystemic": false
+    },
+    {
+      "target": "skills",
+      "suggestion": "Add to extension-worker skill procedure: when the extension has its own vitest config, ensure the root vitest.config.ts excludes extension/ test files to prevent root `npm test` from picking up extension tests that depend on extension-specific mocks/config.",
+      "evidence": "extension-popup-and-client worker discovered this need independently. Root vitest.config.ts now excludes extension/** at line 4. Worker's feedback confirmed this should be documented.",
+      "isSystemic": false
+    },
+    {
+      "target": "skills",
+      "suggestion": "Document in extension-worker skill that AbortController + fake timers interaction in vitest may require dangerouslyIgnoreUnhandledErrors: true in extension vitest config, with a note about the trade-off (suppresses all unhandled rejections).",
+      "evidence": "extension-popup-and-client worker needed this for timeout tests. extension/vitest.config.ts has explanatory comment. 3 PromiseRejectionHandledWarning messages still appear in test output.",
+      "isSystemic": false
+    }
+  ],
+  "rejectedObservations": [],
+  "previousRound": null
+}

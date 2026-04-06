@@ -1,0 +1,28 @@
+{
+  "featureId": "extension-scaffold",
+  "reviewedAt": "2026-04-06T07:10:00.000Z",
+  "commitId": "4e15c5d",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The extension scaffold fully satisfies all feature requirements. manifest.json is valid MV3 with only activeTab and storage permissions, host_permissions scoped to http://localhost:3000/*, _execute_action command with correct keyboard shortcuts, and action.default_popup: popup.html. The esbuild build pipeline (build.mjs) correctly bundles popup.ts and background.ts to dist/ and copies static assets. The background service worker is minimal with install/update logging and a message listener placeholder. The popup.html is CSP-compliant (no inline scripts, loads popup.js via <script src>). Extension tsconfig.json is properly configured. Root package.json has build-extension script, root tsconfig.json excludes extension/, and ESLint config ignores extension/. Build produces all required dist/ files (manifest.json, popup.html, popup.js, popup.css, background.js, icons/).",
+    "issues": [
+      {
+        "file": "extension/",
+        "line": null,
+        "severity": "non_blocking",
+        "description": "Initial commit (56c0c77) accidentally committed extension/node_modules/ and extension/dist/ to git (35 files, ~4300 lines of vendor code including the full esbuild binary). The follow-up commit (4e15c5d) added .gitignore and removed them. While corrected, this bloated git history unnecessarily. The .gitignore should have been created before npm install and the first build."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "target": "skills",
+      "observation": "The extension-worker skill procedure does not mention creating extension/.gitignore for node_modules/ and dist/ as an early step. The worker's own skillFeedback.suggestedChanges confirms this gap. Without this guidance, the worker committed build artifacts and node_modules before realizing the need for a .gitignore.",
+      "evidence": "Handoff skillFeedback.suggestedChanges: 'The extension-worker skill could mention creating a .gitignore for extension/node_modules and extension/dist to prevent accidental commits of build artifacts'. Commit 56c0c77 added 35 files of node_modules and dist, cleaned up in 4e15c5d."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "The extension-scaffold feature passes review. All 7 required deliverables are correctly implemented: MV3 manifest with minimal permissions, esbuild build pipeline, minimal service worker, CSP-compliant popup, extension tsconfig, and root build-extension script. The build produces all required dist/ files. One non-blocking issue: node_modules/dist were briefly committed to git before .gitignore was added. One shared-state observation: the extension-worker skill should include .gitignore creation as an early step."
+}
