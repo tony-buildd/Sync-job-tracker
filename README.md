@@ -84,6 +84,35 @@ npm run dev
 - `npm run build`
 - `npm run convex:dev`
 - `npm run convex:codegen`
+- `npm run build-extension`
+
+## Chrome Extension
+
+Chrome Manifest V3 extension for quick job check and mark from any tab.
+
+### Setup
+
+```bash
+cd extension && npm install && npm run build
+```
+
+Then load the unpacked extension from `extension/dist/` in Chrome (`chrome://extensions` → Developer mode → Load unpacked).
+
+### Features
+
+- Auto-checks the active tab URL against saved jobs
+- Shows current job status (new, already applied, possible duplicate)
+- One-click mark as applied
+
+### Requirements
+
+- The web app must be running and signed in at `localhost:3000`
+
+## Extension API
+
+- `POST /api/extension/check` — check if a URL is a known job
+- `POST /api/extension/mark-applied` — mark a job as applied
+- `GET /extension/check?url=...` — web fallback for extension
 
 ## Notes
 
